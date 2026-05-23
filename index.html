@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Mario Maderas — Precio</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: #f0f2f8;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+  }
+  .card {
+    background: #fff;
+    width: 100%;
+    max-width: 480px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 40px rgba(0,0,0,0.12);
+  }
+  /* HEADER */
+  .header {
+    background: #2222CC;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header img { max-height: 40px; max-width: 140px; object-fit: contain; }
+  .header-txt { color: #fff; }
+  .header-txt .marca { font-family:'Barlow Condensed',sans-serif; font-size:1.3rem; font-weight:800; letter-spacing:0.03em; }
+  .header-txt .sub { font-size:0.65rem; font-weight:500; opacity:0.75; text-transform:uppercase; letter-spacing:0.08em; }
+
+  /* BODY */
+  .body { flex:1; padding: 20px 20px 0; display:flex; flex-direction:column; gap:14px; }
+
+  /* ESTADO */
+  .estado { text-align:center; padding:40px 20px; display:flex; flex-direction:column; align-items:center; gap:12px; }
+  .estado-icono { font-size:2.5rem; }
+  .estado-txt { font-size:1rem; color:#5d6d7e; font-weight:500; }
+  .spinner {
+    width:40px; height:40px;
+    border:4px solid #E8E8FF;
+    border-top-color:#2222CC;
+    border-radius:50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* NOMBRE */
+  .nombre {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #2222CC;
+    line-height: 1.15;
+  }
+
+  /* PRECIO */
+  .precio-bloque {
+    background: rgba(93,201,168,0.12);
+    border: 1.5px solid rgba(93,201,168,0.4);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .precio-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #2222CC;
+    opacity: 0.75;
+  }
+  .precio-valor {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 3rem;
+    font-weight: 800;
+    color: #5DC9A8;
+    line-height: 1;
+    margin-top: 2px;
+  }
+  .precio-iva { font-size:0.7rem; color:#5d6d7e; margin-top:4px; }
+
+  /* DATOS */
+  .datos { display:flex; flex-direction:column; gap:6px; }
+  .dato {
+    display:flex; justify-content:space-between; align-items:center;
+    padding: 8px 12px;
+    background: rgba(34,34,204,0.05);
+    border-radius: 8px;
+  }
+  .dato-k { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#2222CC; opacity:0.6; }
+  .dato-v { font-size:0.88rem; font-weight:600; color:#2222CC; }
+
+  /* BOTÓN FICHA */
+  .btn-ficha {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #2222CC;
+    color: #5DC9A8;
+    border-radius: 10px;
+    text-decoration: none;
+    font-family: 'Barlow', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    transition: opacity 0.2s;
+  }
+  .btn-ficha:hover { opacity: 0.85; }
+
+  /* PROMOCIONES */
+  .promo-bloque {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1.5px solid rgba(93,201,168,0.35);
+  }
+  .promo-titulo {
+    background: rgba(93,201,168,0.22);
+    padding: 8px 14px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #2222CC;
+    letter-spacing: 0.04em;
+  }
+  .promo-lista { padding: 10px 14px; display:flex; flex-direction:column; gap:6px; }
+  .promo-item { display:flex; align-items:flex-start; gap:8px; font-size:0.82rem; color:#2222CC; line-height:1.35; }
+  .promo-check { color:#5DC9A8; font-weight:700; flex-shrink:0; margin-top:1px; }
+
+  /* FOOTER */
+  .footer {
+    padding: 14px 20px;
+    font-size:0.65rem;
+    text-align:center;
+    color:#2222CC;
+    opacity:0.5;
+    border-top: 1px solid rgba(34,34,204,0.08);
+    margin-top:16px;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <div class="header">
+    <img src="logo.png" alt="Mario Maderas" onerror="this.style.display='none';document.getElementById('headerTxt').style.display='block'">
+    <div class="header-txt" id="headerTxt" style="display:none">
+      <div class="marca">Mario Maderas</div>
+      <div class="sub">Maderería &amp; Ferretería</div>
+    </div>
+  </div>
+
+  <div class="body" id="cuerpo">
+    <div class="estado" id="estadoCarga">
+      <div class="spinner"></div>
+      <div class="estado-txt">Buscando precio...</div>
+    </div>
+  </div>
+
+  <div class="footer" id="pie" style="display:none">
+    Precio actualizado: <span id="fechaActualizado"></span> • mariomaderas.com
+  </div>
+
+</div>
+
+<script>
+// ── CONFIGURACIÓN ─────────────────────────────────────
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfxv4fw15ouak9MSPY-0GXV9SxovhO4z-_SFq3fCRR93CRPsjer1rUtu0iwpfMOZ9xEg/exec';
+
+// Promociones — editá este texto cuando quieras
+var PROMO_TITULO = '🎉 Promociones vigentes';
+var PROMOS = [
+  '3 cuotas sin interés con Naranja X',
+  '10% descuento pagando en efectivo',
+  'Envío gratis en compras mayores a $50.000'
+];
+// ─────────────────────────────────────────────────────
+
+function formatPrecio(n) {
+  return '$ ' + parseFloat(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function mostrarError(msg) {
+  document.getElementById('cuerpo').innerHTML =
+    '<div class="estado"><div class="estado-icono">⚠️</div><div class="estado-txt">' + msg + '</div></div>';
+}
+
+async function cargarProducto() {
+  var params = new URLSearchParams(window.location.search);
+  var cod = params.get('cod');
+
+  if (!cod) {
+    mostrarError('No se especificó ningún producto.<br>Escaneá el QR del producto.');
+    return;
+  }
+
+  try {
+    var res = await fetch(APPS_SCRIPT_URL + '?cod=' + encodeURIComponent(cod));
+    var data = await res.json();
+
+    if (!data.ok) {
+      mostrarError('Producto no encontrado.<br>Código: ' + cod);
+      return;
+    }
+
+    var p = data.producto;
+    var html = '';
+
+    // Nombre
+    html += '<div class="nombre">' + p.descripcion + '</div>';
+
+    // Precio
+    html += '<div class="precio-bloque">' +
+      '<div class="precio-label">Precio de lista</div>' +
+      '<div class="precio-valor">' + formatPrecio(p.precio) + '</div>' +
+      '<div class="precio-iva">Precio con IVA incluido</div>' +
+      '</div>';
+
+    // Datos
+    html += '<div class="datos">' +
+      '<div class="dato"><span class="dato-k">Código</span><span class="dato-v">' + p.codigo + '</span></div>' +
+      '<div class="dato"><span class="dato-k">Cód. Fábrica</span><span class="dato-v">' + (p.cod_fabrica || '—') + '</span></div>' +
+      '</div>';
+
+    // Ficha técnica
+    if (p.ficha_tecnica) {
+      html += '<a href="' + p.ficha_tecnica + '" target="_blank" class="btn-ficha">📄 Ver ficha técnica</a>';
+    }
+
+    // Promociones
+    if (PROMOS.length > 0) {
+      html += '<div class="promo-bloque">' +
+        '<div class="promo-titulo">' + PROMO_TITULO + '</div>' +
+        '<div class="promo-lista">';
+      PROMOS.forEach(function(promo) {
+        html += '<div class="promo-item"><span class="promo-check">✓</span><span>' + promo + '</span></div>';
+      });
+      html += '</div></div>';
+    }
+
+    document.getElementById('cuerpo').innerHTML = html;
+
+    // Footer con fecha
+    document.getElementById('fechaActualizado').textContent = data.actualizado || '';
+    document.getElementById('pie').style.display = 'block';
+
+  } catch(e) {
+    mostrarError('Error de conexión.<br>Verificá tu conexión a internet.');
+  }
+}
+
+cargarProducto();
+</script>
+</body>
+</html>
