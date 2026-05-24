@@ -339,8 +339,9 @@ async function cargarProducto() {
     // Nombre
     html += '<div class="nombre anim-fade">' + p.descripcion + '</div>';
 
-    // Determinar qué lista mostrar (por defecto Lista 2, Lista 1 solo si viene &lista=1)
-    var esList2 = (params.get('lista') !== '1');
+    // Lista determinada por el Sheet (p.lista: 1 o 2), por defecto 2
+    var lista = (p.lista === 1) ? 1 : 2;
+    var esList2 = (lista === 2);
     var precioConIva = esList2 ? (p.precio_lista2 || p.precio_lista1) : (p.precio_lista1 || p.precio);
     var precioSinIva = esList2 ? p.precio_sin_iva_2 : p.precio_sin_iva_1;
     var nombreLista  = esList2 ? 'Lista 2' : 'Lista 1';
