@@ -313,17 +313,26 @@ function mostrarError(msg) {
 
 async function cargarConfig() {
   try {
-    const res = await fetch(APPS_SCRIPT_URL + '?action=config');
+    const res = await fetch(APPS_SCRIPT_URL + '?action=config&v=' + Date.now());
     const data = await res.json();
     if (data.ok && data.config) {
       CONFIG = data.config;
       // Aplicar colores
       if (CONFIG.colorPrincipal) {
         document.documentElement.style.setProperty('--azul', CONFIG.colorPrincipal);
-        document.querySelector('.header').style.background = CONFIG.colorPrincipal;
+        const header = document.querySelector('.header');
+        if (header) header.style.background = CONFIG.colorPrincipal;
+        // Update all elements using principal color
+        document.querySelectorAll('.nombre, .dato-k, .promo-titulo, .precio-label').forEach(el => {
+          el.style.color = CONFIG.colorPrincipal;
+        });
       }
       if (CONFIG.colorAcento) {
         document.documentElement.style.setProperty('--acento', CONFIG.colorAcento);
+        // Force update precio-valor color
+        const style = document.createElement('style');
+        style.textContent = '.precio-valor { color: ' + CONFIG.colorAcento + ' !important; } .badge-actualizado { color: ' + CONFIG.colorAcento + ' !important; border-color: ' + CONFIG.colorAcento + ' !important; } .badge-dot { background: ' + CONFIG.colorAcento + ' !important; } .promo-check { background: ' + CONFIG.colorAcento + ' !important; }';
+        document.head.appendChild(style);
       }
       // Aplicar promos
       if (CONFIG.promoTitulo) PROMO_TITULO = CONFIG.promoTitulo;
@@ -346,7 +355,7 @@ async function cargarProducto() {
   }
 
   try {
-    var res = await fetch(APPS_SCRIPT_URL + '?cod=' + encodeURIComponent(cod));
+    var res = await fetch(APPS_SCRIPT_URL + '?cod=' + encodeURIComponent(cod) + '&v=' + Date.now());
     var data = await res.json();
 
     if (!data.ok) {
@@ -378,8 +387,12 @@ async function cargarProducto() {
       '<div class="precio-iva">Precio con IVA incluido</div>' +
       (precioSinIva ? '<div class="precio-sin-iva">Precio sin imp. nacionales: <strong>' + formatPrecio(precioSinIva) + '</strong></div>' : '') +
       '</div>';
+    // Close precio block only if shown
+    if (!mostrarPrecioF) { html = html; } // already conditional above
 
-    // Datos (respeta campos visibles desde config)
+    // Campos visibles desde config (0 = oculto, cualquier otro valor = visible)
+    const mostrarNombreF = CONFIG.mostrarNombre  !== '0';
+    const mostrarPrecioF = CONFIG.mostrarPrecio  !== '0';
     const mostrarCodigo  = CONFIG.mostrarCodigo  !== '0';
     const mostrarFabrica = CONFIG.mostrarFabrica !== '0';
     const mostrarFecha   = CONFIG.mostrarFecha   !== '0';
