@@ -311,6 +311,31 @@ function mostrarError(msg) {
     '<div class="estado"><div class="estado-icono">⚠️</div><div class="estado-txt">' + msg + '</div></div>';
 }
 
+async function cargarConfig() {
+  try {
+    const res = await fetch(APPS_SCRIPT_URL + '?action=config');
+    const data = await res.json();
+    if (data.ok && data.config) {
+      CONFIG = data.config;
+      // Aplicar colores
+      if (CONFIG.colorPrincipal) {
+        document.documentElement.style.setProperty('--azul', CONFIG.colorPrincipal);
+        document.querySelector('.header').style.background = CONFIG.colorPrincipal;
+      }
+      if (CONFIG.colorAcento) {
+        document.documentElement.style.setProperty('--acento', CONFIG.colorAcento);
+      }
+      // Aplicar promos
+      if (CONFIG.promoTitulo) PROMO_TITULO = CONFIG.promoTitulo;
+      if (CONFIG.promoTexto) {
+        PROMOS = CONFIG.promoTexto.split('\n').filter(l => l.trim());
+      }
+    }
+  } catch(e) {
+    console.log('Config no disponible, usando defaults');
+  }
+}
+
 async function cargarProducto() {
   var params = new URLSearchParams(window.location.search);
   var cod = params.get('cod');
@@ -354,19 +379,25 @@ async function cargarProducto() {
       (precioSinIva ? '<div class="precio-sin-iva">Precio sin imp. nacionales: <strong>' + formatPrecio(precioSinIva) + '</strong></div>' : '') +
       '</div>';
 
-    // Datos
-    html += '<div class="datos anim-fade-3">' +
-      '<div class="dato"><span class="dato-k">Código</span><span class="dato-v">' + p.codigo + '</span></div>' +
-      '<div class="dato"><span class="dato-k">Cód. Fábrica</span><span class="dato-v">' + (p.cod_fabrica || '—') + '</span></div>' +
-      '</div>';
+    // Datos (respeta campos visibles desde config)
+    const mostrarCodigo  = CONFIG.mostrarCodigo  !== '0';
+    const mostrarFabrica = CONFIG.mostrarFabrica !== '0';
+    const mostrarFecha   = CONFIG.mostrarFecha   !== '0';
+    const mostrarFicha_  = CONFIG.mostrarFicha   !== '0';
+    const mostrarPromo_  = CONFIG.mostrarPromo   !== '0';
+
+    var datosHtml = '';
+    if (mostrarCodigo)  datosHtml += '<div class="dato"><span class="dato-k">Código</span><span class="dato-v">' + p.codigo + '</span></div>';
+    if (mostrarFabrica) datosHtml += '<div class="dato"><span class="dato-k">Cód. Fábrica</span><span class="dato-v">' + (p.cod_fabrica || '—') + '</span></div>';
+    if (datosHtml) html += '<div class="datos anim-fade-3">' + datosHtml + '</div>';
 
     // Ficha técnica
-    if (p.ficha_tecnica) {
+    if (p.ficha_tecnica && mostrarFicha_) {
       html += '<a href="' + p.ficha_tecnica + '" target="_blank" class="btn-ficha anim-fade-3">📄 Ver ficha técnica</a>';
     }
 
     // Promociones
-    if (PROMOS.length > 0) {
+    if (PROMOS.length > 0 && mostrarPromo_) {
       html += '<div class="promo-bloque anim-fade-4">' +
         '<div class="promo-titulo">' + PROMO_TITULO + '</div>' +
         '<div class="promo-lista">';
@@ -387,7 +418,7 @@ async function cargarProducto() {
   }
 }
 
-cargarProducto();
+cargarConfig().then(() => cargarProducto());
 </script>
 </body>
 </html>
