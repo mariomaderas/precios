@@ -248,7 +248,7 @@
 
 <script>
 // ── CONFIGURACIÓN ─────────────────────────────────────
-var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzDjaewCW-f8SvzJ8AkK0Wgc0d922t0GAnKvZzoYrFiNIYs3uGOgB4pFQCm7CPVVUCk/exec';
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfxv4fw15ouak9MSPY-0GXV9SxovhO4z-_SFq3fCRR93CRPsjer1rUtu0iwpfMOZ9xEg/exec';
 
 // Promociones por defecto (se sobreescriben con lo que viene del Sheet)
 var PROMO_TITULO = '🎉 Promociones vigentes';
@@ -271,38 +271,16 @@ function mostrarError(msg) {
     '<div class="estado"><div class="estado-icono">⚠️</div><div class="estado-txt">' + msg + '</div></div>';
 }
 
-// ── JSONP helper ──────────────────────────────────────
-// Reemplaza fetch() para evitar el problema de autenticación de Apps Script
-// con cuentas personales de Google (no Workspace).
-var _jsonpCounter = 0;
+// ── fetch helper ─────────────────────────────────────
 function jsonpCall(url, timeoutMs) {
   timeoutMs = timeoutMs || 8000;
-  return new Promise(function(resolve, reject) {
-    var cbName = '__mm_cb_' + (++_jsonpCounter) + '_' + Date.now();
-    var script = document.createElement('script');
-    var timer = setTimeout(function() {
-      cleanup();
-      reject(new Error('Timeout'));
-    }, timeoutMs);
-
-    function cleanup() {
-      clearTimeout(timer);
-      delete window[cbName];
-      if (script.parentNode) script.parentNode.removeChild(script);
-    }
-
-    window[cbName] = function(data) {
-      cleanup();
-      resolve(data);
-    };
-
-    var sep = url.indexOf('?') >= 0 ? '&' : '?';
-    script.src = url + sep + 'callback=' + cbName + '&v=' + Date.now();
-    script.onerror = function() {
-      cleanup();
-      reject(new Error('Error de red'));
-    };
-    document.head.appendChild(script);
+  var controller = new AbortController();
+  var timer = setTimeout(function(){ controller.abort(); }, timeoutMs);
+  return fetch(url + (url.indexOf('?') >= 0 ? '&' : '?') + 'v=' + Date.now(), {
+    signal: controller.signal
+  }).then(function(res) {
+    clearTimeout(timer);
+    return res.json();
   });
 }
 // ─────────────────────────────────────────────────────
