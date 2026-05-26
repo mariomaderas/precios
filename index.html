@@ -57,18 +57,29 @@
   /* NOMBRE */
   .nombre {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 1.4rem;
+    font-size: 1.55rem;
     font-weight: 700;
     color: #2222CC;
     line-height: 1.15;
+    letter-spacing: 0.01em;
   }
 
   /* PRECIO */
   .precio-bloque {
-    background: rgba(93,201,168,0.12);
-    border: 1.5px solid rgba(93,201,168,0.4);
-    border-radius: 12px;
-    padding: 16px 18px;
+    background: linear-gradient(135deg, rgba(93,201,168,0.10) 0%, rgba(93,201,168,0.18) 100%);
+    border: 1.5px solid rgba(93,201,168,0.45);
+    border-radius: 16px;
+    padding: 20px 20px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .precio-bloque::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 100px; height: 100px;
+    background: radial-gradient(circle, rgba(93,201,168,0.18) 0%, transparent 70%);
+    border-radius: 50%;
   }
   .precio-label {
     font-size: 0.7rem;
@@ -80,11 +91,13 @@
   }
   .precio-valor {
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 3rem;
+    font-size: 3.6rem;
     font-weight: 800;
     color: #5DC9A8;
     line-height: 1;
     margin-top: 2px;
+    letter-spacing: -0.01em;
+    animation: pricePop 0.5s cubic-bezier(.17,.67,.35,1.2) 0.15s both;
   }
   .precio-iva { font-size:0.7rem; color:#5d6d7e; margin-top:4px; }
   .precio-sin-iva { font-size:0.7rem; color:#2222CC; margin-top:6px; padding-top:6px; border-top:1px solid rgba(34,34,204,0.1); opacity:0.8; }
@@ -121,22 +134,39 @@
 
   /* PROMOCIONES */
   .promo-bloque {
-    border-radius: 10px;
+    border-radius: 14px;
     overflow: hidden;
     border: 1.5px solid rgba(93,201,168,0.35);
+    background: linear-gradient(135deg, rgba(93,201,168,0.06) 0%, rgba(34,34,204,0.04) 100%);
   }
   .promo-titulo {
     background: rgba(93,201,168,0.22);
-    padding: 8px 14px;
+    padding: 10px 16px;
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: 800;
     color: #2222CC;
     letter-spacing: 0.04em;
   }
   .promo-lista { padding: 10px 14px; display:flex; flex-direction:column; gap:6px; }
-  .promo-item { display:flex; align-items:flex-start; gap:8px; font-size:0.82rem; color:#2222CC; line-height:1.35; }
-  .promo-check { color:#5DC9A8; font-weight:700; flex-shrink:0; margin-top:1px; }
+  .promo-item {
+    display:flex; align-items:flex-start; gap:10px;
+    font-size:0.88rem; color:#2222CC; line-height:1.4;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(34,34,204,0.06);
+  }
+  .promo-item:last-child { border-bottom: none; }
+  .promo-check {
+    width: 20px; height: 20px;
+    background: #5DC9A8;
+    color: #fff;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 900;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
 
   /* ANIMACIONES */
   @keyframes fadeUp {
@@ -148,11 +178,10 @@
     70%  { transform: scale(1.04); }
     100% { transform: scale(1);    opacity:1; }
   }
-  .anim-fade  { animation: fadeUp 0.45s ease both; }
+  .anim-fade   { animation: fadeUp 0.45s ease both; }
   .anim-fade-2 { animation: fadeUp 0.45s ease 0.1s both; }
   .anim-fade-3 { animation: fadeUp 0.45s ease 0.2s both; }
   .anim-fade-4 { animation: fadeUp 0.45s ease 0.3s both; }
-  .precio-valor { animation: pricePop 0.5s cubic-bezier(.17,.67,.35,1.2) 0.15s both; }
 
   /* BADGE ACTUALIZADO */
   .badge-actualizado {
@@ -179,78 +208,6 @@
   @keyframes pulse {
     0%, 100% { opacity:1; transform:scale(1); }
     50% { opacity:0.4; transform:scale(0.7); }
-  }
-
-  /* PRECIO mejorado */
-  .precio-bloque {
-    background: linear-gradient(135deg, rgba(93,201,168,0.10) 0%, rgba(93,201,168,0.18) 100%);
-    border: 1.5px solid rgba(93,201,168,0.45);
-    border-radius: 16px;
-    padding: 20px 20px 16px;
-    position: relative;
-    overflow: hidden;
-  }
-  .precio-bloque::before {
-    content: '';
-    position: absolute;
-    top: -30px; right: -30px;
-    width: 100px; height: 100px;
-    background: radial-gradient(circle, rgba(93,201,168,0.18) 0%, transparent 70%);
-    border-radius: 50%;
-  }
-  .precio-valor {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 3.6rem;
-    font-weight: 800;
-    color: #5DC9A8;
-    line-height: 1;
-    margin-top: 2px;
-    letter-spacing: -0.01em;
-  }
-
-  /* PROMOS mejoradas */
-  .promo-bloque {
-    border-radius: 14px;
-    overflow: hidden;
-    border: 1.5px solid rgba(93,201,168,0.35);
-    background: linear-gradient(135deg, rgba(93,201,168,0.06) 0%, rgba(34,34,204,0.04) 100%);
-  }
-  .promo-titulo {
-    background: rgba(93,201,168,0.22);
-    padding: 10px 16px;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 1rem;
-    font-weight: 800;
-    color: #2222CC;
-    letter-spacing: 0.04em;
-  }
-  .promo-item {
-    display:flex; align-items:flex-start; gap:10px;
-    font-size:0.88rem; color:#2222CC; line-height:1.4;
-    padding: 7px 0;
-    border-bottom: 1px solid rgba(34,34,204,0.06);
-  }
-  .promo-item:last-child { border-bottom: none; }
-  .promo-check {
-    width: 20px; height: 20px;
-    background: #5DC9A8;
-    color: #fff;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.65rem;
-    font-weight: 900;
-    flex-shrink: 0;
-    margin-top: 1px;
-  }
-
-  /* NOMBRE mejorado */
-  .nombre {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 1.55rem;
-    font-weight: 700;
-    color: #2222CC;
-    line-height: 1.15;
-    letter-spacing: 0.01em;
   }
 
   /* FOOTER */
@@ -293,13 +250,16 @@
 // ── CONFIGURACIÓN ─────────────────────────────────────
 var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfxv4fw15ouak9MSPY-0GXV9SxovhO4z-_SFq3fCRR93CRPsjer1rUtu0iwpfMOZ9xEg/exec';
 
-// Promociones — editá este texto cuando quieras
+// Promociones por defecto (se sobreescriben con lo que viene del Sheet)
 var PROMO_TITULO = '🎉 Promociones vigentes';
 var PROMOS = [
   '3 cuotas sin interés con Naranja X',
   '10% descuento pagando en efectivo',
   'Envío gratis en compras mayores a $50.000'
 ];
+
+// Config por defecto
+var CONFIG = {};
 // ─────────────────────────────────────────────────────
 
 function formatPrecio(n) {
@@ -311,32 +271,49 @@ function mostrarError(msg) {
     '<div class="estado"><div class="estado-icono">⚠️</div><div class="estado-txt">' + msg + '</div></div>';
 }
 
-async function cargarConfig() {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000); // 3 segundos máximo
-    const res = await fetch(APPS_SCRIPT_URL + '?action=config&v=' + Date.now(), { signal: controller.signal });
-    clearTimeout(timeout);
-    const data = await res.json();
-    if (data.ok && data.config) {
-      CONFIG = data.config;
-      aplicarColores();
-      if (CONFIG.promoTitulo) PROMO_TITULO = CONFIG.promoTitulo;
-      if (CONFIG.promoTexto) PROMOS = CONFIG.promoTexto.split('\n').filter(l => l.trim());
+// ── JSONP helper ──────────────────────────────────────
+// Reemplaza fetch() para evitar el problema de autenticación de Apps Script
+// con cuentas personales de Google (no Workspace).
+var _jsonpCounter = 0;
+function jsonpCall(url, timeoutMs) {
+  timeoutMs = timeoutMs || 8000;
+  return new Promise(function(resolve, reject) {
+    var cbName = '__mm_cb_' + (++_jsonpCounter) + '_' + Date.now();
+    var script = document.createElement('script');
+    var timer = setTimeout(function() {
+      cleanup();
+      reject(new Error('Timeout'));
+    }, timeoutMs);
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
     }
-  } catch(e) {
-    console.log('Config no disponible, usando defaults:', e.message);
-  }
-  // SIEMPRE continúa — nunca bloquea la carga del producto
+
+    window[cbName] = function(data) {
+      cleanup();
+      resolve(data);
+    };
+
+    var sep = url.indexOf('?') >= 0 ? '&' : '?';
+    script.src = url + sep + 'callback=' + cbName + '&v=' + Date.now();
+    script.onerror = function() {
+      cleanup();
+      reject(new Error('Error de red'));
+    };
+    document.head.appendChild(script);
+  });
 }
+// ─────────────────────────────────────────────────────
 
 function aplicarColores() {
   if (CONFIG.colorPrincipal) {
-    const header = document.querySelector('.header');
+    var header = document.querySelector('.header');
     if (header) header.style.background = CONFIG.colorPrincipal;
   }
   if (CONFIG.colorAcento) {
-    const style = document.createElement('style');
+    var style = document.createElement('style');
     style.textContent = [
       '.precio-valor { color: ' + CONFIG.colorAcento + ' !important; }',
       '.badge-actualizado { color: ' + CONFIG.colorAcento + ' !important; border-color: ' + CONFIG.colorAcento + ' !important; }',
@@ -348,6 +325,84 @@ function aplicarColores() {
   }
 }
 
+function aplicarConfig(cfg) {
+  if (!cfg) return;
+  CONFIG = cfg;
+  aplicarColores();
+  if (CONFIG.promoTitulo) PROMO_TITULO = CONFIG.promoTitulo;
+  if (CONFIG.promoTexto)  PROMOS = CONFIG.promoTexto.split('\n').filter(function(l){ return l.trim(); });
+}
+
+function renderProducto(data) {
+  // Aplicar config que viene junto con el producto
+  if (data.config) aplicarConfig(data.config);
+
+  var p = data.producto;
+
+  // Campos visibles desde config (0 = oculto)
+  var mostrarNombreF = CONFIG.mostrarNombre  !== '0';
+  var mostrarPrecioF = CONFIG.mostrarPrecio  !== '0';
+  var mostrarCodigo  = CONFIG.mostrarCodigo  !== '0';
+  var mostrarFabrica = CONFIG.mostrarFabrica !== '0';
+  var mostrarFicha_  = CONFIG.mostrarFicha   !== '0';
+  var mostrarPromo_  = CONFIG.mostrarPromo   !== '0';
+
+  var html = '';
+
+  // Badge actualizado
+  var hoy = new Date().toLocaleDateString('es-AR', {day:'numeric', month:'long'});
+  html += '<div class="anim-fade"><span class="badge-actualizado"><span class="badge-dot"></span>Precio actualizado · ' + hoy + '</span></div>';
+
+  // Nombre
+  if (mostrarNombreF) {
+    html += '<div class="nombre anim-fade">' + p.descripcion + '</div>';
+  }
+
+  // Lista determinada por el Sheet (p.lista: 1 o 2), por defecto 2
+  if (mostrarPrecioF) {
+    var lista = (p.lista === 1) ? 1 : 2;
+    var esList2 = (lista === 2);
+    var precioConIva = esList2 ? (p.precio_lista2 || p.precio_lista1) : (p.precio_lista1 || p.precio);
+    var precioSinIva = esList2 ? p.precio_sin_iva_2 : p.precio_sin_iva_1;
+    var nombreLista  = esList2 ? 'Lista 2' : 'Lista 1';
+
+    html += '<div class="precio-bloque anim-fade-2">' +
+      '<div class="precio-label">Precio de ' + nombreLista + '</div>' +
+      '<div class="precio-valor">' + formatPrecio(precioConIva) + '</div>' +
+      '<div class="precio-iva">Precio con IVA incluido</div>' +
+      (precioSinIva ? '<div class="precio-sin-iva">Precio sin imp. nacionales: <strong>' + formatPrecio(precioSinIva) + '</strong></div>' : '') +
+      '</div>';
+  }
+
+  // Datos
+  var datosHtml = '';
+  if (mostrarCodigo)  datosHtml += '<div class="dato"><span class="dato-k">Código</span><span class="dato-v">' + p.codigo + '</span></div>';
+  if (mostrarFabrica) datosHtml += '<div class="dato"><span class="dato-k">Cód. Fábrica</span><span class="dato-v">' + (p.cod_fabrica || '—') + '</span></div>';
+  if (datosHtml) html += '<div class="datos anim-fade-3">' + datosHtml + '</div>';
+
+  // Ficha técnica
+  if (p.ficha_tecnica && mostrarFicha_) {
+    html += '<a href="' + p.ficha_tecnica + '" target="_blank" class="btn-ficha anim-fade-3">📄 Ver ficha técnica</a>';
+  }
+
+  // Promociones
+  if (PROMOS.length > 0 && mostrarPromo_) {
+    html += '<div class="promo-bloque anim-fade-4">' +
+      '<div class="promo-titulo">' + PROMO_TITULO + '</div>' +
+      '<div class="promo-lista">';
+    PROMOS.forEach(function(promo) {
+      html += '<div class="promo-item"><div class="promo-check">✓</div><span>' + promo + '</span></div>';
+    });
+    html += '</div></div>';
+  }
+
+  document.getElementById('cuerpo').innerHTML = html;
+
+  // Footer con fecha
+  document.getElementById('fechaActualizado').textContent = data.actualizado || '';
+  document.getElementById('pie').style.display = 'block';
+}
+
 async function cargarProducto() {
   var params = new URLSearchParams(window.location.search);
   var cod = params.get('cod');
@@ -357,101 +412,43 @@ async function cargarProducto() {
     return;
   }
 
+  // Intentar cargar config desde localStorage (carga instantánea)
   try {
-    var res = await fetch(APPS_SCRIPT_URL + '?cod=' + encodeURIComponent(cod) + '&v=' + Date.now());
-    var data = await res.json();
+    var cachedCfg = localStorage.getItem('mm_config');
+    if (cachedCfg) aplicarConfig(JSON.parse(cachedCfg));
+  } catch(e) {}
 
-    if (!data.ok) {
-      mostrarError('Producto no encontrado.<br>Código: ' + cod);
-      return;
-    }
+  // Llamada principal con JSONP — no requiere login en Google
+  var intentos = 0;
+  var data = null;
 
-    // Aplicar config que viene junto con el producto
-    if (data.config) {
-      CONFIG = data.config;
-      aplicarColores();
-      if (CONFIG.promoTitulo) PROMO_TITULO = CONFIG.promoTitulo;
-      if (CONFIG.promoTexto) PROMOS = CONFIG.promoTexto.split('\n').filter(l => l.trim());
-    }
-
-    var p = data.producto;
-    var html = '';
-
-    // Badge actualizado
-    var hoy = new Date().toLocaleDateString('es-AR', {day:'numeric', month:'long'});
-    html += '<div class="anim-fade"><span class="badge-actualizado"><span class="badge-dot"></span>Precio actualizado · ' + hoy + '</span></div>';
-
-    // Nombre
-    html += '<div class="nombre anim-fade">' + p.descripcion + '</div>';
-
-    // Lista determinada por el Sheet (p.lista: 1 o 2), por defecto 2
-    var lista = (p.lista === 1) ? 1 : 2;
-    var esList2 = (lista === 2);
-    var precioConIva = esList2 ? (p.precio_lista2 || p.precio_lista1) : (p.precio_lista1 || p.precio);
-    var precioSinIva = esList2 ? p.precio_sin_iva_2 : p.precio_sin_iva_1;
-    var nombreLista  = esList2 ? 'Lista 2' : 'Lista 1';
-
-    // Precio
-    html += '<div class="precio-bloque anim-fade-2">' +
-      '<div class="precio-label">Precio de ' + nombreLista + '</div>' +
-      '<div class="precio-valor">' + formatPrecio(precioConIva) + '</div>' +
-      '<div class="precio-iva">Precio con IVA incluido</div>' +
-      (precioSinIva ? '<div class="precio-sin-iva">Precio sin imp. nacionales: <strong>' + formatPrecio(precioSinIva) + '</strong></div>' : '') +
-      '</div>';
-    // Close precio block only if shown
-    if (!mostrarPrecioF) { html = html; } // already conditional above
-
-    // Campos visibles desde config (0 = oculto, cualquier otro valor = visible)
-    const mostrarNombreF = CONFIG.mostrarNombre  !== '0';
-    const mostrarPrecioF = CONFIG.mostrarPrecio  !== '0';
-    const mostrarCodigo  = CONFIG.mostrarCodigo  !== '0';
-    const mostrarFabrica = CONFIG.mostrarFabrica !== '0';
-    const mostrarFecha   = CONFIG.mostrarFecha   !== '0';
-    const mostrarFicha_  = CONFIG.mostrarFicha   !== '0';
-    const mostrarPromo_  = CONFIG.mostrarPromo   !== '0';
-
-    var datosHtml = '';
-    if (mostrarCodigo)  datosHtml += '<div class="dato"><span class="dato-k">Código</span><span class="dato-v">' + p.codigo + '</span></div>';
-    if (mostrarFabrica) datosHtml += '<div class="dato"><span class="dato-k">Cód. Fábrica</span><span class="dato-v">' + (p.cod_fabrica || '—') + '</span></div>';
-    if (datosHtml) html += '<div class="datos anim-fade-3">' + datosHtml + '</div>';
-
-    // Ficha técnica
-    if (p.ficha_tecnica && mostrarFicha_) {
-      html += '<a href="' + p.ficha_tecnica + '" target="_blank" class="btn-ficha anim-fade-3">📄 Ver ficha técnica</a>';
-    }
-
-    // Promociones
-    if (PROMOS.length > 0 && mostrarPromo_) {
-      html += '<div class="promo-bloque anim-fade-4">' +
-        '<div class="promo-titulo">' + PROMO_TITULO + '</div>' +
-        '<div class="promo-lista">';
-      PROMOS.forEach(function(promo) {
-        html += '<div class="promo-item"><div class="promo-check">✓</div><span>' + promo + '</span></div>';
-      });
-      html += '</div></div>';
-    }
-
-    document.getElementById('cuerpo').innerHTML = html;
-
-    // Footer con fecha
-    document.getElementById('fechaActualizado').textContent = data.actualizado || '';
-    document.getElementById('pie').style.display = 'block';
-
-  } catch(e) {
-    // Retry once after 2 seconds
+  while (intentos < 2 && !data) {
     try {
-      await new Promise(r => setTimeout(r, 2000));
-      var res2 = await fetch(APPS_SCRIPT_URL + '?cod=' + encodeURIComponent(cod) + '&v=' + Date.now());
-      var data2 = await res2.json();
-      if (!data2.ok) { mostrarError('Producto no encontrado.<br>Código: ' + cod); return; }
-      var p = data2.producto;
-      // Re-run display (simplified)
-      document.getElementById('cuerpo').innerHTML = '<div class="estado"><div class="estado-icono">✅</div><div class="estado-txt">Producto cargado</div></div>';
-      location.reload();
-    } catch(e2) {
-      mostrarError('Error de conexión.<br>Verificá tu conexión a internet.');
+      if (intentos > 0) {
+        // Esperar 2 segundos antes del reintento
+        await new Promise(function(r){ setTimeout(r, 2000); });
+      }
+      data = await jsonpCall(APPS_SCRIPT_URL + '?cod=' + encodeURIComponent(cod));
+    } catch(e) {
+      intentos++;
+      if (intentos >= 2) {
+        mostrarError('Error de conexión.<br>Verificá tu conexión a internet.');
+        return;
+      }
     }
   }
+
+  if (!data || !data.ok) {
+    mostrarError('Producto no encontrado.<br>Código: ' + cod);
+    return;
+  }
+
+  // Guardar config en localStorage para próxima carga instantánea
+  if (data.config) {
+    try { localStorage.setItem('mm_config', JSON.stringify(data.config)); } catch(e) {}
+  }
+
+  renderProducto(data);
 }
 
 cargarProducto();
