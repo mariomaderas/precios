@@ -366,6 +366,14 @@ async function cargarProducto() {
       return;
     }
 
+    // Aplicar config que viene junto con el producto
+    if (data.config) {
+      CONFIG = data.config;
+      aplicarColores();
+      if (CONFIG.promoTitulo) PROMO_TITULO = CONFIG.promoTitulo;
+      if (CONFIG.promoTexto) PROMOS = CONFIG.promoTexto.split('\n').filter(l => l.trim());
+    }
+
     var p = data.producto;
     var html = '';
 
@@ -446,7 +454,7 @@ async function cargarProducto() {
   }
 }
 
-cargarConfig().then(() => cargarProducto());
+cargarProducto();
 </script>
 </body>
 </html>
