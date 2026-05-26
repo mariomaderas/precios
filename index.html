@@ -313,35 +313,38 @@ function mostrarError(msg) {
 
 async function cargarConfig() {
   try {
-    const res = await fetch(APPS_SCRIPT_URL + '?action=config&v=' + Date.now());
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000); // 3 segundos máximo
+    const res = await fetch(APPS_SCRIPT_URL + '?action=config&v=' + Date.now(), { signal: controller.signal });
+    clearTimeout(timeout);
     const data = await res.json();
     if (data.ok && data.config) {
       CONFIG = data.config;
-      // Aplicar colores
-      if (CONFIG.colorPrincipal) {
-        document.documentElement.style.setProperty('--azul', CONFIG.colorPrincipal);
-        const header = document.querySelector('.header');
-        if (header) header.style.background = CONFIG.colorPrincipal;
-        // Update all elements using principal color
-        document.querySelectorAll('.nombre, .dato-k, .promo-titulo, .precio-label').forEach(el => {
-          el.style.color = CONFIG.colorPrincipal;
-        });
-      }
-      if (CONFIG.colorAcento) {
-        document.documentElement.style.setProperty('--acento', CONFIG.colorAcento);
-        // Force update precio-valor color
-        const style = document.createElement('style');
-        style.textContent = '.precio-valor { color: ' + CONFIG.colorAcento + ' !important; } .badge-actualizado { color: ' + CONFIG.colorAcento + ' !important; border-color: ' + CONFIG.colorAcento + ' !important; } .badge-dot { background: ' + CONFIG.colorAcento + ' !important; } .promo-check { background: ' + CONFIG.colorAcento + ' !important; }';
-        document.head.appendChild(style);
-      }
-      // Aplicar promos
+      aplicarColores();
       if (CONFIG.promoTitulo) PROMO_TITULO = CONFIG.promoTitulo;
-      if (CONFIG.promoTexto) {
-        PROMOS = CONFIG.promoTexto.split('\n').filter(l => l.trim());
-      }
+      if (CONFIG.promoTexto) PROMOS = CONFIG.promoTexto.split('\n').filter(l => l.trim());
     }
   } catch(e) {
-    console.log('Config no disponible, usando defaults');
+    console.log('Config no disponible, usando defaults:', e.message);
+  }
+  // SIEMPRE continúa — nunca bloquea la carga del producto
+}
+
+function aplicarColores() {
+  if (CONFIG.colorPrincipal) {
+    const header = document.querySelector('.header');
+    if (header) header.style.background = CONFIG.colorPrincipal;
+  }
+  if (CONFIG.colorAcento) {
+    const style = document.createElement('style');
+    style.textContent = [
+      '.precio-valor { color: ' + CONFIG.colorAcento + ' !important; }',
+      '.badge-actualizado { color: ' + CONFIG.colorAcento + ' !important; border-color: ' + CONFIG.colorAcento + ' !important; }',
+      '.badge-dot { background: ' + CONFIG.colorAcento + ' !important; }',
+      '.promo-check { background: ' + CONFIG.colorAcento + ' !important; }',
+      '.precio-sin-iva strong { color: ' + CONFIG.colorAcento + '; }'
+    ].join('');
+    document.head.appendChild(style);
   }
 }
 
@@ -427,7 +430,19 @@ async function cargarProducto() {
     document.getElementById('pie').style.display = 'block';
 
   } catch(e) {
-    mostrarError('Error de conexión.<br>Verificá tu conexión a internet.');
+    // Retry once after 2 seconds
+    try {
+      await new Promise(r => setTimeout(r, 2000));
+      var res2 = await fetch(APPS_SCRIPT_URL + '?cod=' + encodeURIComponent(cod) + '&v=' + Date.now());
+      var data2 = await res2.json();
+      if (!data2.ok) { mostrarError('Producto no encontrado.<br>Código: ' + cod); return; }
+      var p = data2.producto;
+      // Re-run display (simplified)
+      document.getElementById('cuerpo').innerHTML = '<div class="estado"><div class="estado-icono">✅</div><div class="estado-txt">Producto cargado</div></div>';
+      location.reload();
+    } catch(e2) {
+      mostrarError('Error de conexión.<br>Verificá tu conexión a internet.');
+    }
   }
 }
 
