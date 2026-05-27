@@ -25,7 +25,6 @@
     flex-direction: column;
     box-shadow: 0 0 40px rgba(0,0,0,0.12);
   }
-  /* HEADER */
   .header {
     background: #2222CC;
     padding: 16px 20px;
@@ -37,11 +36,7 @@
   .header-txt { color: #fff; }
   .header-txt .marca { font-family:'Barlow Condensed',sans-serif; font-size:1.3rem; font-weight:800; letter-spacing:0.03em; }
   .header-txt .sub { font-size:0.65rem; font-weight:500; opacity:0.75; text-transform:uppercase; letter-spacing:0.08em; }
-
-  /* BODY */
   .body { flex:1; padding: 20px 20px 0; display:flex; flex-direction:column; gap:14px; }
-
-  /* ESTADO */
   .estado { text-align:center; padding:40px 20px; display:flex; flex-direction:column; align-items:center; gap:12px; }
   .estado-icono { font-size:2.5rem; }
   .estado-txt { font-size:1rem; color:#5d6d7e; font-weight:500; }
@@ -53,8 +48,6 @@
     animation: spin 0.8s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* NOMBRE */
   .nombre {
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 1.55rem;
@@ -63,8 +56,6 @@
     line-height: 1.15;
     letter-spacing: 0.01em;
   }
-
-  /* PRECIO */
   .precio-bloque {
     background: linear-gradient(135deg, rgba(93,201,168,0.10) 0%, rgba(93,201,168,0.18) 100%);
     border: 1.5px solid rgba(93,201,168,0.45);
@@ -81,14 +72,7 @@
     background: radial-gradient(circle, rgba(93,201,168,0.18) 0%, transparent 70%);
     border-radius: 50%;
   }
-  .precio-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #2222CC;
-    opacity: 0.75;
-  }
+  .precio-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #2222CC; opacity: 0.75; }
   .precio-valor {
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 3.6rem;
@@ -101,52 +85,37 @@
   }
   .precio-iva { font-size:0.7rem; color:#5d6d7e; margin-top:4px; }
   .precio-sin-iva { font-size:0.7rem; color:#2222CC; margin-top:6px; padding-top:6px; border-top:1px solid rgba(34,34,204,0.1); opacity:0.8; }
-
-  /* DATOS */
   .datos { display:flex; flex-direction:column; gap:6px; }
-  .dato {
-    display:flex; justify-content:space-between; align-items:center;
-    padding: 8px 12px;
-    background: rgba(34,34,204,0.05);
-    border-radius: 8px;
-  }
+  .dato { display:flex; justify-content:space-between; align-items:center; padding: 8px 12px; background: rgba(34,34,204,0.05); border-radius: 8px; }
   .dato-k { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#2222CC; opacity:0.6; }
   .dato-v { font-size:0.88rem; font-weight:600; color:#2222CC; }
-
-  /* BOTÓN FICHA */
   .btn-ficha {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px 20px;
-    background: #2222CC;
-    color: #5DC9A8;
-    border-radius: 10px;
-    text-decoration: none;
-    font-family: 'Barlow', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    transition: opacity 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 20px; background: #2222CC; color: #5DC9A8;
+    border-radius: 10px; text-decoration: none;
+    font-family: 'Barlow', sans-serif; font-size: 0.9rem; font-weight: 700;
+    letter-spacing: 0.03em; transition: opacity 0.2s;
   }
   .btn-ficha:hover { opacity: 0.85; }
 
+  /* CARRUSEL BANNERS */
+  .banner-carousel { width:100%; overflow:hidden; border-radius:12px; }
+  .banner-track { display:flex; transition:transform 0.4s ease; }
+  .banner-track img { width:100%; flex-shrink:0; object-fit:cover; border-radius:12px; max-height:200px; display:block; }
+  .banner-dots { display:flex; justify-content:center; gap:7px; margin-top:8px; }
+  .banner-dot { width:8px; height:8px; border-radius:50%; background:rgba(34,34,204,0.2); cursor:pointer; transition:background 0.2s; }
+  .banner-dot.active { background:#2222CC; }
+
   /* PROMOCIONES */
   .promo-bloque {
-    border-radius: 14px;
-    overflow: hidden;
+    border-radius: 14px; overflow: hidden;
     border: 1.5px solid rgba(93,201,168,0.35);
     background: linear-gradient(135deg, rgba(93,201,168,0.06) 0%, rgba(34,34,204,0.04) 100%);
   }
   .promo-titulo {
-    background: rgba(93,201,168,0.22);
-    padding: 10px 16px;
-    font-family: 'Barlow Condensed', sans-serif;
-    font-size: 1rem;
-    font-weight: 800;
-    color: #2222CC;
-    letter-spacing: 0.04em;
+    background: rgba(93,201,168,0.22); padding: 10px 16px;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 1rem;
+    font-weight: 800; color: #2222CC; letter-spacing: 0.04em;
   }
   .promo-lista { padding: 10px 14px; display:flex; flex-direction:column; gap:6px; }
   .promo-item {
@@ -156,75 +125,29 @@
     border-bottom: 1px solid rgba(34,34,204,0.06);
   }
   .promo-item:last-child { border-bottom: none; }
-  .promo-check {
-    width: 20px; height: 20px;
-    background: #5DC9A8;
-    color: #fff;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.65rem;
-    font-weight: 900;
-    flex-shrink: 0;
-    margin-top: 1px;
-  }
 
-  /* ANIMACIONES */
-  @keyframes fadeUp {
-    from { opacity:0; transform:translateY(18px); }
-    to   { opacity:1; transform:translateY(0); }
-  }
-  @keyframes pricePop {
-    0%   { transform: scale(0.85); opacity:0; }
-    70%  { transform: scale(1.04); }
-    100% { transform: scale(1);    opacity:1; }
-  }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes pricePop { 0% { transform: scale(0.85); opacity:0; } 70% { transform: scale(1.04); } 100% { transform: scale(1); opacity:1; } }
   .anim-fade   { animation: fadeUp 0.45s ease both; }
   .anim-fade-2 { animation: fadeUp 0.45s ease 0.1s both; }
   .anim-fade-3 { animation: fadeUp 0.45s ease 0.2s both; }
   .anim-fade-4 { animation: fadeUp 0.45s ease 0.3s both; }
+  .anim-fade-5 { animation: fadeUp 0.45s ease 0.4s both; }
 
-  /* BADGE ACTUALIZADO */
   .badge-actualizado {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background: rgba(93,201,168,0.15);
-    border: 1px solid rgba(93,201,168,0.4);
-    border-radius: 20px;
-    padding: 3px 10px;
-    font-size: 0.65rem;
-    font-weight: 700;
-    color: #5DC9A8;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    margin-bottom: 6px;
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(93,201,168,0.15); border: 1px solid rgba(93,201,168,0.4);
+    border-radius: 20px; padding: 3px 10px;
+    font-size: 0.65rem; font-weight: 700; color: #5DC9A8;
+    letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 6px;
   }
-  .badge-dot {
-    width: 6px; height: 6px;
-    background: #5DC9A8;
-    border-radius: 50%;
-    animation: pulse 1.8s ease-in-out infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity:1; transform:scale(1); }
-    50% { opacity:0.4; transform:scale(0.7); }
-  }
-
-  /* FOOTER */
-  .footer {
-    padding: 14px 20px;
-    font-size:0.65rem;
-    text-align:center;
-    color:#2222CC;
-    opacity:0.5;
-    border-top: 1px solid rgba(34,34,204,0.08);
-    margin-top:16px;
-  }
+  .badge-dot { width: 6px; height: 6px; background: #5DC9A8; border-radius: 50%; animation: pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.7); } }
+  .footer { padding: 14px 20px; font-size:0.65rem; text-align:center; color:#2222CC; opacity:0.5; border-top: 1px solid rgba(34,34,204,0.08); margin-top:16px; }
 </style>
 </head>
 <body>
 <div class="card">
-
   <div class="header">
     <img src="logo.png" alt="Mario Maderas" onerror="this.style.display='none';document.getElementById('headerTxt').style.display='block'">
     <div class="header-txt" id="headerTxt" style="display:none">
@@ -232,46 +155,36 @@
       <div class="sub">Maderería &amp; Ferretería</div>
     </div>
   </div>
-
   <div class="body" id="cuerpo">
     <div class="estado" id="estadoCarga">
       <div class="spinner"></div>
       <div class="estado-txt">Buscando precio...</div>
     </div>
   </div>
-
   <div class="footer" id="pie" style="display:none">
     Precio actualizado: <span id="fechaActualizado"></span> • mariomaderas.com
   </div>
-
 </div>
 
 <script>
-// ── CONFIGURACIÓN ─────────────────────────────────────
 var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfxv4fw15ouak9MSPY-0GXV9SxovhO4z-_SFq3fCRR93CRPsjer1rUtu0iwpfMOZ9xEg/exec';
-
-// Promociones por defecto (se sobreescriben con lo que viene del Sheet)
 var PROMO_TITULO = '🎉 Promociones vigentes';
 var PROMOS = [
   '3 cuotas sin interés con Naranja X',
   '10% descuento pagando en efectivo',
   'Envío gratis en compras mayores a $50.000'
 ];
-
-// Config por defecto
 var CONFIG = {};
-// ─────────────────────────────────────────────────────
+var BANNERS = [];
+var _bIdx = 0, _bTimer = null;
 
 function formatPrecio(n) {
   return '$ ' + parseFloat(n).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-
 function mostrarError(msg) {
   document.getElementById('cuerpo').innerHTML =
     '<div class="estado"><div class="estado-icono">⚠️</div><div class="estado-txt">' + msg + '</div></div>';
 }
-
-// ── fetch helper ─────────────────────────────────────
 function jsonpCall(url, timeoutMs) {
   timeoutMs = timeoutMs || 8000;
   var controller = new AbortController();
@@ -283,7 +196,20 @@ function jsonpCall(url, timeoutMs) {
     return res.json();
   });
 }
-// ─────────────────────────────────────────────────────
+
+function irBanner(i) {
+  _bIdx = i;
+  var t = document.getElementById('bannerTrack');
+  if (t) t.style.transform = 'translateX(-' + (i * 100) + '%)';
+  document.querySelectorAll('#bannerDots .banner-dot').forEach(function(d, j) {
+    d.classList.toggle('active', j === i);
+  });
+}
+function iniciarCarrusel(n) {
+  clearInterval(_bTimer);
+  if (n <= 1) return;
+  _bTimer = setInterval(function() { irBanner((_bIdx + 1) % n); }, 3500);
+}
 
 function aplicarColores() {
   if (CONFIG.colorPrincipal) {
@@ -296,38 +222,35 @@ function aplicarColores() {
       '.precio-valor { color: ' + CONFIG.colorAcento + ' !important; }',
       '.badge-actualizado { color: ' + CONFIG.colorAcento + ' !important; border-color: ' + CONFIG.colorAcento + ' !important; }',
       '.badge-dot { background: ' + CONFIG.colorAcento + ' !important; }',
-      '.promo-check { background: ' + CONFIG.colorAcento + ' !important; }',
       '.precio-sin-iva strong { color: ' + CONFIG.colorAcento + '; }'
     ].join('');
     document.head.appendChild(style);
   }
 }
-
 function aplicarConfig(cfg) {
   if (!cfg) return;
   CONFIG = cfg;
   aplicarColores();
   if (CONFIG.promoTitulo) PROMO_TITULO = CONFIG.promoTitulo;
   if (CONFIG.promoTexto)  PROMOS = CONFIG.promoTexto.split('\n').filter(function(l){ return l.trim(); });
+  if (CONFIG.banners)     BANNERS = CONFIG.banners.split('|').filter(function(b){ return b.trim(); });
 }
 
 function renderProducto(data) {
-  // Aplicar config que viene junto con el producto
   if (data.config) aplicarConfig(data.config);
-
   var p = data.producto;
 
-  // Campos visibles desde config (0 = oculto)
   var mostrarNombreF = CONFIG.mostrarNombre  !== '0';
   var mostrarPrecioF = CONFIG.mostrarPrecio  !== '0';
   var mostrarCodigo  = CONFIG.mostrarCodigo  !== '0';
   var mostrarFabrica = CONFIG.mostrarFabrica !== '0';
   var mostrarFicha_  = CONFIG.mostrarFicha   !== '0';
   var mostrarPromo_  = CONFIG.mostrarPromo   !== '0';
+  var mostrarBanners_= CONFIG.mostrarBanners !== '0';
 
   var html = '';
 
-  // Badge actualizado
+  // Badge
   var hoy = new Date().toLocaleDateString('es-AR', {day:'numeric', month:'long'});
   html += '<div class="anim-fade"><span class="badge-actualizado"><span class="badge-dot"></span>Precio actualizado · ' + hoy + '</span></div>';
 
@@ -336,14 +259,13 @@ function renderProducto(data) {
     html += '<div class="nombre anim-fade">' + p.descripcion + '</div>';
   }
 
-  // Lista determinada por el Sheet (p.lista: 1 o 2), por defecto 2
+  // Precio
   if (mostrarPrecioF) {
     var lista = (p.lista === 1) ? 1 : 2;
     var esList2 = (lista === 2);
     var precioConIva = esList2 ? (p.precio_lista2 || p.precio_lista1) : (p.precio_lista1 || p.precio);
     var precioSinIva = esList2 ? p.precio_sin_iva_2 : p.precio_sin_iva_1;
     var nombreLista  = esList2 ? 'Lista 2' : 'Lista 1';
-
     html += '<div class="precio-bloque anim-fade-2">' +
       '<div class="precio-label">Precio de ' + nombreLista + '</div>' +
       '<div class="precio-valor">' + formatPrecio(precioConIva) + '</div>' +
@@ -363,9 +285,22 @@ function renderProducto(data) {
     html += '<a href="' + p.ficha_tecnica + '" target="_blank" class="btn-ficha anim-fade-3">📄 Ver ficha técnica</a>';
   }
 
+  // Banners / Carrusel (entre precio y promociones)
+  if (BANNERS.length > 0 && mostrarBanners_) {
+    html += '<div class="banner-carousel anim-fade-4" id="carrusel">' +
+      '<div class="banner-track" id="bannerTrack">' +
+      BANNERS.map(function(b){ return '<img src="' + b.trim() + '" alt="" loading="lazy">'; }).join('') +
+      '</div>' +
+      (BANNERS.length > 1 ?
+        '<div class="banner-dots" id="bannerDots">' +
+        BANNERS.map(function(_, i){ return '<div class="banner-dot' + (i === 0 ? ' active' : '') + '" onclick="irBanner(' + i + ')"></div>'; }).join('') +
+        '</div>' : '') +
+      '</div>';
+  }
+
   // Promociones
   if (PROMOS.length > 0 && mostrarPromo_) {
-    html += '<div class="promo-bloque anim-fade-4">' +
+    html += '<div class="promo-bloque anim-fade-5">' +
       '<div class="promo-titulo">' + PROMO_TITULO + '</div>' +
       '<div class="promo-lista">';
     PROMOS.forEach(function(promo) {
@@ -375,57 +310,39 @@ function renderProducto(data) {
   }
 
   document.getElementById('cuerpo').innerHTML = html;
-
-  // Footer con fecha
   document.getElementById('fechaActualizado').textContent = data.actualizado || '';
   document.getElementById('pie').style.display = 'block';
+
+  // Iniciar carrusel automático si hay más de 1 imagen
+  if (BANNERS.length > 1 && mostrarBanners_) {
+    iniciarCarrusel(BANNERS.length);
+  }
 }
 
 async function cargarProducto() {
   var params = new URLSearchParams(window.location.search);
   var cod = params.get('cod');
-
   if (!cod) {
     mostrarError('No se especificó ningún producto.<br>Escaneá el QR del producto.');
     return;
   }
-
-  // Intentar cargar config desde localStorage (carga instantánea)
   try {
     var cachedCfg = localStorage.getItem('mm_config');
     if (cachedCfg) aplicarConfig(JSON.parse(cachedCfg));
   } catch(e) {}
 
-  // Llamada principal con JSONP — no requiere login en Google
-  var intentos = 0;
-  var data = null;
-
+  var intentos = 0, data = null;
   while (intentos < 2 && !data) {
     try {
-      if (intentos > 0) {
-        // Esperar 2 segundos antes del reintento
-        await new Promise(function(r){ setTimeout(r, 2000); });
-      }
+      if (intentos > 0) await new Promise(function(r){ setTimeout(r, 2000); });
       data = await jsonpCall(APPS_SCRIPT_URL + '?cod=' + encodeURIComponent(cod));
     } catch(e) {
       intentos++;
-      if (intentos >= 2) {
-        mostrarError('Error de conexión.<br>Verificá tu conexión a internet.');
-        return;
-      }
+      if (intentos >= 2) { mostrarError('Error de conexión.<br>Verificá tu conexión a internet.'); return; }
     }
   }
-
-  if (!data || !data.ok) {
-    mostrarError('Producto no encontrado.<br>Código: ' + cod);
-    return;
-  }
-
-  // Guardar config en localStorage para próxima carga instantánea
-  if (data.config) {
-    try { localStorage.setItem('mm_config', JSON.stringify(data.config)); } catch(e) {}
-  }
-
+  if (!data || !data.ok) { mostrarError('Producto no encontrado.<br>Código: ' + cod); return; }
+  if (data.config) { try { localStorage.setItem('mm_config', JSON.stringify(data.config)); } catch(e) {} }
   renderProducto(data);
 }
 
