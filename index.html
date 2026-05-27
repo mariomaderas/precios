@@ -176,6 +176,7 @@ var PROMOS = [
 ];
 var CONFIG = {};
 var BANNERS = [];
+var BANNER_LINKS = [];
 var _bIdx = 0, _bTimer = null;
 
 function formatPrecio(n) {
@@ -234,6 +235,7 @@ function aplicarConfig(cfg) {
   if (CONFIG.promoTitulo) PROMO_TITULO = CONFIG.promoTitulo;
   if (CONFIG.promoTexto)  PROMOS = CONFIG.promoTexto.split('\n').filter(function(l){ return l.trim(); });
   if (CONFIG.banners)     BANNERS = CONFIG.banners.split('|').filter(function(b){ return b.trim(); });
+  if (CONFIG.bannerLinks) BANNER_LINKS = CONFIG.bannerLinks.split('|');
 }
 
 function renderProducto(data) {
@@ -289,7 +291,11 @@ function renderProducto(data) {
   if (BANNERS.length > 0 && mostrarBanners_) {
     html += '<div class="banner-carousel anim-fade-4" id="carrusel">' +
       '<div class="banner-track" id="bannerTrack">' +
-      BANNERS.map(function(b){ return '<img src="' + b.trim() + '" alt="" loading="lazy">'; }).join('') +
+      BANNERS.map(function(b, i){
+        var img = '<img src="' + b.trim() + '" alt="" loading="lazy" style="width:100%;">';
+        var link = BANNER_LINKS[i] ? BANNER_LINKS[i].trim() : '';
+        return link ? '<a href="' + link + '" target="_blank" style="display:block;">' + img + '</a>' : img;
+      }).join('') +
       '</div>' +
       (BANNERS.length > 1 ?
         '<div class="banner-dots" id="bannerDots">' +
