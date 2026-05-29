@@ -213,18 +213,53 @@ function iniciarCarrusel(n) {
 }
 
 function aplicarColores() {
-  if (CONFIG.colorPrincipal) {
+  var principal = CONFIG.colorPrincipal || null;
+  var acento    = CONFIG.colorAcento    || null;
+  var titulo    = CONFIG.colorTitulo    || principal;
+  var codigo    = CONFIG.colorCodigo    || principal;
+
+  // Eliminar estilos dinámicos previos para no acumular
+  var prev = document.getElementById('mm-dynamic-style');
+  if (prev) prev.remove();
+
+  var rules = [];
+
+  if (principal) {
     var header = document.querySelector('.header');
-    if (header) header.style.background = CONFIG.colorPrincipal;
+    if (header) header.style.background = principal;
+    rules.push('.precio-label { color: ' + principal + ' !important; opacity: 0.75; }');
+    rules.push('.precio-iva { color: ' + principal + ' !important; opacity: 0.75; }');
+    rules.push('.precio-sin-iva { color: ' + principal + ' !important; }');
+    rules.push('.promo-titulo { color: ' + principal + ' !important; }');
+    rules.push('.promo-item { color: ' + principal + ' !important; }');
+    rules.push('.footer { color: ' + principal + ' !important; }');
+    rules.push('.banner-dot { background: rgba(0,0,0,0.2) !important; }');
+    rules.push('.banner-dot.active { background: ' + principal + ' !important; }');
+    rules.push('.btn-ficha { background: ' + principal + ' !important; }');
   }
-  if (CONFIG.colorAcento) {
+  if (acento) {
+    rules.push('.precio-valor { color: ' + acento + ' !important; }');
+    rules.push('.badge-actualizado { color: ' + acento + ' !important; border-color: ' + acento + ' !important; background: rgba(0,0,0,0.04) !important; }');
+    rules.push('.badge-dot { background: ' + acento + ' !important; }');
+    rules.push('.precio-sin-iva strong { color: ' + acento + ' !important; }');
+    rules.push('.btn-ficha { color: ' + acento + ' !important; }');
+    rules.push('.precio-bloque { border-color: ' + acento + '70 !important; }');
+    rules.push('.promo-bloque { border-color: ' + acento + '60 !important; }');
+    rules.push('.promo-titulo { background: ' + acento + '38 !important; }');
+  }
+  if (titulo) {
+    rules.push('.nombre { color: ' + titulo + ' !important; }');
+  }
+  if (codigo) {
+    rules.push('.dato-k { color: ' + codigo + ' !important; }');
+    rules.push('.dato-v { color: ' + codigo + ' !important; }');
+    rules.push('.dato { background: ' + codigo + '0d !important; }');
+  }
+
+  if (rules.length > 0) {
     var style = document.createElement('style');
-    style.textContent = [
-      '.precio-valor { color: ' + CONFIG.colorAcento + ' !important; }',
-      '.badge-actualizado { color: ' + CONFIG.colorAcento + ' !important; border-color: ' + CONFIG.colorAcento + ' !important; }',
-      '.badge-dot { background: ' + CONFIG.colorAcento + ' !important; }',
-      '.precio-sin-iva strong { color: ' + CONFIG.colorAcento + '; }'
-    ].join('');
+    style.id = 'mm-dynamic-style';
+    style.textContent = rules.join('\n');
     document.head.appendChild(style);
   }
 }
