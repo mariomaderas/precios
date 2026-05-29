@@ -334,7 +334,13 @@ async function cargarProducto() {
   }
   try {
     var cachedCfg = localStorage.getItem('mm_config');
-    if (cachedCfg) aplicarConfig(JSON.parse(cachedCfg));
+    var cachedTs  = localStorage.getItem('mm_config_ts');
+    var TTL = 30 * 60 * 1000; // 30 minutos
+    if (cachedCfg && cachedTs && (Date.now() - parseInt(cachedTs)) < TTL) {
+      aplicarConfig(JSON.parse(cachedCfg));
+    } else {
+      localStorage.removeItem('mm_config'); // forzar recarga desde Sheet
+    }
   } catch(e) {}
 
   var intentos = 0, data = null;
@@ -348,7 +354,12 @@ async function cargarProducto() {
     }
   }
   if (!data || !data.ok) { mostrarError('Producto no encontrado.<br>Código: ' + cod); return; }
-  if (data.config) { try { localStorage.setItem('mm_config', JSON.stringify(data.config)); } catch(e) {} }
+  if (data.config) {
+    try {
+      localStorage.setItem('mm_config', JSON.stringify(data.config));
+      localStorage.setItem('mm_config_ts', Date.now().toString());
+    } catch(e) {}
+  }
   renderProducto(data);
 }
 
