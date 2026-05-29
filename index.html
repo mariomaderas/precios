@@ -335,11 +335,13 @@ async function cargarProducto() {
   try {
     var cachedCfg = localStorage.getItem('mm_config');
     var cachedTs  = localStorage.getItem('mm_config_ts');
-    var TTL = 30 * 60 * 1000; // 30 minutos
+    var TTL = 5 * 60 * 1000; // 5 minutos
     if (cachedCfg && cachedTs && (Date.now() - parseInt(cachedTs)) < TTL) {
       aplicarConfig(JSON.parse(cachedCfg));
-    } else {
-      localStorage.removeItem('mm_config'); // forzar recarga desde Sheet
+    }
+    // Si venció o no hay caché, igual mostramos lo que haya mientras carga
+    else if (cachedCfg) {
+      aplicarConfig(JSON.parse(cachedCfg)); // aplica el viejo mientras espera
     }
   } catch(e) {}
 
@@ -354,11 +356,12 @@ async function cargarProducto() {
     }
   }
   if (!data || !data.ok) { mostrarError('Producto no encontrado.<br>Código: ' + cod); return; }
-  if (data.config) {
+  if (data.config && Object.keys(data.config).length > 0) {
     try {
       localStorage.setItem('mm_config', JSON.stringify(data.config));
       localStorage.setItem('mm_config_ts', Date.now().toString());
     } catch(e) {}
+    aplicarConfig(data.config); // re-aplicar con datos frescos del Sheet
   }
   renderProducto(data);
 }
