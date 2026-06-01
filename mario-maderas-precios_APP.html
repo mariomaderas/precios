@@ -2,6 +2,9 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Mario Maderas — Lista de Precios</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -488,13 +491,16 @@ let presupCounter = 1;
 
 function loadData() {
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfxv4fw15ouak9MSPY-0GXV9SxovhO4z-_SFq3fCRR93CRPsjer1rUtu0iwpfMOZ9xEg/exec';
+  console.log('loadData v14 - protocolo:', window.location.protocol);
 
   // Si se abre como archivo local (file://) el fetch no funciona por CORS
   // En ese caso cargamos los datos embebidos directamente
   if (window.location.protocol === 'file:') {
+    console.log('Modo offline - usando datos embebidos');
     loadStaticData();
     return;
   }
+  console.log('Modo online - conectando con Apps Script...');
 
   // Si se abre desde un servidor (http/https), fetch normal al Apps Script
   showLoading('Conectando con lista de precios...');
@@ -7377,5 +7383,3 @@ async function guardarEnDrive() {
     if (driveBtn) { driveBtn.textContent = '☁️ Drive'; driveBtn.disabled = false; }
   }
 }
-
-
