@@ -491,43 +491,45 @@ let presupCounter = 1;
 
 function loadData() {
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfxv4fw15ouak9MSPY-0GXV9SxovhO4z-_SFq3fCRR93CRPsjer1rUtu0iwpfMOZ9xEg/exec';
-  console.log('loadData v14 - protocolo:', window.location.protocol);
 
-  // Si se abre como archivo local (file://) el fetch no funciona por CORS
-  // En ese caso cargamos los datos embebidos directamente
-  if (window.location.protocol === 'file:') {
-    console.log('Modo offline - usando datos embebidos');
-    loadStaticData();
-    return;
-  }
-  console.log('Modo online - conectando con Apps Script...');
+  // 1. Carga inmediata con datos embebidos — siempre funciona
+  loadStaticData();
 
-  // Si se abre desde un servidor (http/https), fetch normal al Apps Script
-  showLoading('Conectando con lista de precios...');
-  fetch(APPS_SCRIPT_URL + '?action=all&t=' + Date.now())
-    .then(r => r.json())
-    .then(json => {
-      if (!json.ok || !json.productos || json.productos.length === 0) throw new Error('Sin datos');
-      allProducts = json.productos
-        .filter(p => p.descripcion && p.descripcion.trim())
-        .map((p, idx) => ({
-          id: idx,
-          codigo:        String(p.codigo || '').trim(),
-          cod_fabrica:   String(p.cod_fabrica || '').trim(),
-          descripcion:   String(p.descripcion || '').trim(),
-          precio_lista1: parseFloat(p.precio_lista1) || 0,
-          precio_lista2: parseFloat(p.precio_lista2) || 0,
-        }));
-      const now = new Date();
-      document.getElementById('fechaActual').innerHTML =
-        'Actualizado: ' + now.toLocaleDateString('es-AR') + ' ' +
-        now.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
-      init();
-    })
-    .catch(e => {
-      console.warn('Apps Script falló:', e.message);
-      loadStaticData();
-    });
+  // 2. En segundo plano intenta actualizar desde el Apps Script
+  // Solo si hay conexión y no es file://
+  if (window.location.protocol === 'file:') return;
+
+  setTimeout(() => {
+    fetch(APPS_SCRIPT_URL + '?action=all&t=' + Date.now())
+      .then(r => r.json())
+      .then(json => {
+        if (!json.ok || !json.productos || json.productos.length === 0) return;
+        const fresh = json.productos
+          .filter(p => p.descripcion && p.descripcion.trim())
+          .map((p, idx) => ({
+            id: idx,
+            codigo:        String(p.codigo || '').trim(),
+            cod_fabrica:   String(p.cod_fabrica || '').trim(),
+            descripcion:   String(p.descripcion || '').trim(),
+            precio_lista1: parseFloat(p.precio_lista1) || 0,
+            precio_lista2: parseFloat(p.precio_lista2) || 0,
+          }));
+        if (fresh.length > 0) {
+          allProducts = fresh;
+          filtered = [...allProducts];
+          filteredCod = [];
+          buildCategoryChips();
+          buildAlphaStrip();
+          buildFabricaFilters();
+          renderProducts(filtered, 'productList', 'resultsCount');
+          const now = new Date();
+          document.getElementById('fechaActual').innerHTML =
+            '🟢 ' + now.toLocaleDateString('es-AR') + ' ' +
+            now.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
+        }
+      })
+      .catch(() => {}); // silencioso si falla
+  }, 500);
 }
 
 
