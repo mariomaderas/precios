@@ -436,9 +436,9 @@
           <thead>
             <tr>
               <th>Cód.</th>
-              <th style="min-width:120px;">Producto</th>
+              <th style="min-width:100px;">Producto</th>
               <th>Cant.</th>
-              <th>Unit.</th>
+              <th>Lista/Unit.</th>
               <th>Total</th>
               <th></th>
             </tr>
@@ -512,8 +512,8 @@ function setLista(num) {
   const btn2 = document.getElementById('btnLista2');
   if (!btn1 || !btn2) return;
   if (num === 1) {
-    btn1.style.background = 'var(--azul)'; btn1.style.color = '#fff';
-    btn1.style.borderColor = 'var(--azul)'; btn1.textContent = 'Lista 1 ✓';
+    btn1.style.background = 'var(--rojo)'; btn1.style.color = '#fff';
+    btn1.style.borderColor = 'var(--rojo)'; btn1.textContent = 'Lista 1 ✓';
     btn2.style.background = 'var(--bg)'; btn2.style.color = 'var(--texto)';
     btn2.style.borderColor = 'var(--borde)'; btn2.textContent = 'Lista 2';
   } else {
@@ -956,7 +956,13 @@ function addToPresup(id) {
   if(existing) {
     existing.qty++;
   } else {
-    presupItems.push({ id, codigo: p.codigo, descripcion: p.descripcion, precio: listaActiva === 1 ? p.precio_lista1 : p.precio_lista2, qty: 1 });
+    presupItems.push({
+      id, codigo: p.codigo, descripcion: p.descripcion,
+      precio_lista1: p.precio_lista1, precio_lista2: p.precio_lista2,
+      lista: listaActiva,
+      precio: listaActiva === 1 ? p.precio_lista1 : p.precio_lista2,
+      qty: 1
+    });
   }
   renderPresup();
   // Visual feedback
@@ -1006,10 +1012,14 @@ function renderPresup() {
   actionBtns.style.display = 'grid';
 
   const tbody = document.getElementById('presupTbody');
-  tbody.innerHTML = presupItems.map((item, idx) => `
+  tbody.innerHTML = presupItems.map((item, idx) => {
+    const esL1 = item.lista === 1;
+    const colorLista = esL1 ? 'var(--rojo)' : 'var(--azul)';
+    const labelLista = esL1 ? 'L1' : 'L2';
+    return `
     <tr>
       <td><small>${item.codigo}</small></td>
-      <td style="font-size:.82rem;max-width:130px;">${item.descripcion}</td>
+      <td style="font-size:.82rem;max-width:110px;">${item.descripcion}</td>
       <td>
         <div class="qty-ctrl">
           <button class="qty-btn" onclick="changeQty(${idx},-1)">−</button>
@@ -1017,17 +1027,27 @@ function renderPresup() {
           <button class="qty-btn" onclick="changeQty(${idx},1)">+</button>
         </div>
       </td>
-      <td>${fmt(item.precio)}</td>
-      <td><strong>${fmt(item.precio * item.qty)}</strong></td>
+      <td>
+        <button onclick="toggleListaItem(${idx})" style="background:${colorLista};color:#fff;border:none;border-radius:5px;padding:2px 6px;font-size:.75rem;cursor:pointer;font-weight:700;display:block;margin-bottom:3px;">${labelLista}</button>
+        <span style="color:${colorLista};font-weight:700;">${fmt(item.precio)}</span>
+      </td>
+      <td style="color:${colorLista};font-weight:700;">${fmt(item.precio * item.qty)}</td>
       <td><button class="del-btn" onclick="removeItem(${idx})">🗑</button></td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 
   const total = presupItems.reduce((s,i)=>s+i.precio*i.qty,0);
   document.getElementById('totalPresup').textContent = fmt(total);
   document.getElementById('totalCardAmount').textContent = fmt(total);
   const items = presupItems.reduce((s,i)=>s+i.qty,0);
   document.getElementById('totalCardItems').textContent = `${items} artículo${items!==1?'s':''}`;
+}
+
+function toggleListaItem(idx) {
+  const item = presupItems[idx];
+  item.lista = item.lista === 1 ? 2 : 1;
+  item.precio = item.lista === 1 ? item.precio_lista1 : item.precio_lista2;
+  renderPresup();
 }
 
 function changeQty(idx, delta) {
@@ -1064,19 +1084,19 @@ function getPresupText() {
   const obs = document.getElementById('pObs').value;
   const total = presupItems.reduce((s,i)=>s+i.precio*i.qty,0);
 
-  let txt = `🏪 *MARIO MADERAS*\n`;
-  txt += `📋 Presupuesto N° ${num} — ${fecha}\n`;
-  txt += `👤 Cliente: ${cliente}\n`;
-  txt += `━━━━━━━━━━━━━━━━━━\n`;
+  let txt = `*MARIO MADERAS*\n`;
+  txt += `Presupuesto N° ${num} - ${fecha}\n`;
+  txt += `Cliente: ${cliente}\n`;
+  txt += `------------------\n`;
   presupItems.forEach(item => {
     txt += `\n`;
-    txt += `[${item.codigo}] • ${item.descripcion}\n`;
-    txt += `  ${item.qty} x ${fmt(item.precio)} = *${fmt(item.precio*item.qty)}*\n`;
+    txt += `[${item.codigo}] ${item.descripcion}\n`;
+    txt += `  ${item.qty} x ${fmt(item.precio)} (${item.lista===1?'L1':'L2'}) = *${fmt(item.precio*item.qty)}*\n`;
   });
-  txt += `\n━━━━━━━━━━━━━━━━━━\n`;
-  txt += `💰 *TOTAL: ${fmt(total)}*\n`;
-  if(obs) txt += `📝 ${obs}\n`;
-  txt += `\n_Precios con IVA incluido. Sujetos a cambio sin previo aviso._`;
+  txt += `\n------------------\n`;
+  txt += `*TOTAL: ${fmt(total)}*\n`;
+  if(obs) txt += `${obs}\n`;
+  txt += `\nPrecios con IVA incluido. Sujetos a cambio sin previo aviso.`;
   return txt;
 }
 
@@ -1137,10 +1157,15 @@ async function guardarEnDrive() {
   const obs      = document.getElementById('pObs').value;
   const total    = presupItems.reduce((s, i) => s + i.precio * i.qty, 0);
 
-  // Armar resumen de items legible
-  const items = presupItems.map(i =>
-    `[${i.codigo}] ${i.descripcion} x${i.qty} = ${fmt(i.precio * i.qty)}`
-  ).join(' | ');
+  // Armar items con detalle completo para el PDF
+  const itemsDetalle = presupItems.map(i => ({
+    codigo: i.codigo,
+    descripcion: i.descripcion,
+    qty: i.qty,
+    precio: i.precio,
+    total: i.precio * i.qty,
+    lista: i.lista || 2
+  }));
 
   const driveBtn = document.querySelector('[onclick="guardarEnDrive()"]');
   if (driveBtn) { driveBtn.textContent = '⏳ Guardando...'; driveBtn.disabled = true; }
@@ -1150,13 +1175,25 @@ async function guardarEnDrive() {
       method: 'POST',
       body: JSON.stringify({
         action: 'guardarPresupuesto',
-        presupuesto: { numero: num, fecha, cliente, items, total, obs }
+        presupuesto: {
+          numero: num, fecha, cliente, obs, total,
+          items: presupItems.map(i => `[${i.codigo}] ${i.descripcion} x${i.qty} (${i.lista===1?'L1':'L2'}) = ${fmt(i.precio*i.qty)}`).join(' | '),
+          itemsDetalle,
+          guardarPDF: true,
+          carpetaId: '1qMP6LnwbeuJll8LlaqbuE5W8LT3aZob1'
+        }
       })
     });
     const json = await resp.json();
     if (json.ok) {
       incrementarNumero();
-      alert('✅ Presupuesto N°' + num + ' guardado en el sheet "presupuestos".');
+      let msg = '✅ Presupuesto N°' + num + ' guardado correctamente.';
+      if (json.pdfUrl) msg += '\n\n¿Querés abrirlo en Drive?';
+      if (json.pdfUrl && confirm(msg)) {
+        window.open(json.pdfUrl, '_blank');
+      } else if (!json.pdfUrl) {
+        alert(msg);
+      }
     } else {
       throw new Error(json.error || 'Error desconocido');
     }
