@@ -77,10 +77,8 @@
   }
 
   /* ALPHA FILTER */
-  .alpha-strip {
-    display: flex; overflow-x: auto; gap: 4px; padding: 4px 0 8px;
-    scrollbar-width: none;
-  }
+  .alpha-strip { display: none; }
+  .filter-row { display: none !important; }
   .alpha-strip::-webkit-scrollbar { display: none; }
   .alpha-btn {
     flex-shrink: 0; width: 30px; height: 30px; border-radius: 8px;
@@ -324,8 +322,13 @@
   <div id="tab-lista" class="tab-panel active">
     <div class="search-bar">
       <span class="ico">🔍</span>
-      <input type="text" id="searchNombre" placeholder="Buscar por nombre de producto..." oninput="filtrarProductos()" autocomplete="off" autocorrect="off" spellcheck="false">
+      <input type="text" id="searchNombre" placeholder="Buscar desde el inicio del nombre..." oninput="filtrarProductos()" autocomplete="off" autocorrect="off" spellcheck="false">
       <button class="clear-btn" onclick="clearSearch('searchNombre')">✕</button>
+    </div>
+    <div class="search-bar">
+      <span class="ico">🔎</span>
+      <input type="text" id="searchContiene" placeholder="Buscar palabra en cualquier parte..." oninput="filtrarProductos()" autocomplete="off" autocorrect="off" spellcheck="false">
+      <button class="clear-btn" onclick="clearSearch('searchContiene')">✕</button>
     </div>
 
     <div class="alpha-strip" id="alphaStrip"></div>
@@ -353,8 +356,13 @@
     </div>
     <div class="search-bar">
       <span class="ico">🏭</span>
-      <input type="text" id="searchFabrica" placeholder="Buscar por código de fábrica..." oninput="filtrarPorCodigo('fabrica')" autocomplete="off">
+      <input type="text" id="searchFabrica" placeholder="Buscar por número de fábrica..." oninput="filtrarPorCodigo('fabrica')" autocomplete="off">
       <button class="clear-btn" onclick="clearSearch('searchFabrica')">✕</button>
+    </div>
+    <div class="search-bar">
+      <span class="ico">🔎</span>
+      <input type="text" id="searchNombreCod" placeholder="Buscar por nombre de producto..." oninput="filtrarPorCodigo('nombre')" autocomplete="off">
+      <button class="clear-btn" onclick="clearSearch('searchNombreCod')">✕</button>
     </div>
 
     <!-- Filtro por número de fábrica -->
@@ -381,7 +389,7 @@
       <div class="form-grid">
         <div class="form-field full">
           <label>Cliente</label>
-          <input type="text" id="pCliente" placeholder="Nombre del cliente">
+          <input type="text" id="pCliente" placeholder="Nombre del cliente" value="Consumidor final">
         </div>
         <div class="form-field">
           <label>Fecha</label>
@@ -390,6 +398,17 @@
         <div class="form-field">
           <label>N° Presupuesto</label>
           <input type="text" id="pNumero" placeholder="0001">
+        </div>
+        <div class="form-field full">
+          <label>Lista de Precios</label>
+          <div style="display:flex;gap:8px;">
+            <button id="btnLista1" onclick="setLista(1)" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--borde);background:var(--bg);font-family:'Barlow',sans-serif;font-size:.9rem;cursor:pointer;color:var(--texto);transition:all .15s;">
+              Lista 1
+            </button>
+            <button id="btnLista2" onclick="setLista(2)" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--azul);background:var(--azul);color:#fff;font-family:'Barlow',sans-serif;font-size:.9rem;cursor:pointer;transition:all .15s;">
+              Lista 2 ✓
+            </button>
+          </div>
         </div>
         <div class="form-field full">
           <label>Observaciones</label>
@@ -485,6 +504,25 @@ let selectedCategory = '';
 let selectedFabricaFilter = '';
 let modalProduct = null;
 let presupCounter = 1;
+let listaActiva = 2; // Por defecto Lista 2
+
+function setLista(num) {
+  listaActiva = num;
+  const btn1 = document.getElementById('btnLista1');
+  const btn2 = document.getElementById('btnLista2');
+  if (!btn1 || !btn2) return;
+  if (num === 1) {
+    btn1.style.background = 'var(--azul)'; btn1.style.color = '#fff';
+    btn1.style.borderColor = 'var(--azul)'; btn1.textContent = 'Lista 1 ✓';
+    btn2.style.background = 'var(--bg)'; btn2.style.color = 'var(--texto)';
+    btn2.style.borderColor = 'var(--borde)'; btn2.textContent = 'Lista 2';
+  } else {
+    btn2.style.background = 'var(--azul)'; btn2.style.color = '#fff';
+    btn2.style.borderColor = 'var(--azul)'; btn2.textContent = 'Lista 2 ✓';
+    btn1.style.background = 'var(--bg)'; btn1.style.color = 'var(--texto)';
+    btn1.style.borderColor = 'var(--borde)'; btn1.textContent = 'Lista 1';
+  }
+}
 
 // Mapeo columnas: A=codigo, B=cod_fabrica, D=descripcion, E=precio_lista1
 // La hoja tiene: codigo, cod_fabrica, descripcion, precio_lista1, precio_lista2
@@ -741,14 +779,20 @@ function setFabricaFilter(prefix) {
 }
 
 function filtrarProductos() {
-  const q = document.getElementById('searchNombre').value.toLowerCase().trim();
+  const q1 = document.getElementById('searchNombre').value.toLowerCase().trim();
+  const q2 = (document.getElementById('searchContiene') ? document.getElementById('searchContiene').value.toLowerCase().trim() : '');
   filtered = allProducts.filter(p => {
-    const matchSearch = !q || p.descripcion.toLowerCase().startsWith(q) || p.codigo.toLowerCase().includes(q);
+    const desc = p.descripcion.toLowerCase();
+    // Buscador 1: desde el inicio del nombre
+    const matchNombre = !q1 || desc.startsWith(q1) || p.codigo.toLowerCase().includes(q1);
+    // Buscador 2: contiene en cualquier parte
+    const matchContiene = !q2 || desc.includes(q2) || p.codigo.toLowerCase().includes(q2);
     const matchAlpha = !selectedAlpha || p.descripcion.startsWith(selectedAlpha);
     const matchCat = !selectedCategory || p.descripcion.startsWith(selectedCategory);
-    return matchSearch && matchAlpha && matchCat;
+    return matchNombre && matchContiene && matchAlpha && matchCat;
   });
-  renderProducts(filtered, 'productList', 'resultsCount', q);
+  const hl = q1 || q2;
+  renderProducts(filtered, 'productList', 'resultsCount', hl);
 }
 
 function filtrarPorCodigo(tipo) {
@@ -758,11 +802,13 @@ function filtrarPorCodigo(tipo) {
   }
   const qInt = document.getElementById('searchCodigo').value.toLowerCase().trim();
   const qFab = document.getElementById('searchFabrica').value.toLowerCase().trim();
+  const qNom = document.getElementById('searchNombreCod') ? document.getElementById('searchNombreCod').value.toLowerCase().trim() : '';
   filteredCod = allProducts.filter(p => {
     const matchInt = !qInt || p.codigo.toLowerCase().includes(qInt);
     const matchFab = !qFab || p.cod_fabrica.toLowerCase().includes(qFab);
+    const matchNom = !qNom || p.descripcion.toLowerCase().includes(qNom);
     const matchFabFilter = !selectedFabricaFilter || (p.cod_fabrica && p.cod_fabrica.toUpperCase().startsWith(selectedFabricaFilter));
-    return matchInt && matchFab && matchFabFilter;
+    return matchInt && matchFab && matchNom && matchFabFilter;
   });
   const q = qInt || qFab;
   if(!q && !selectedFabricaFilter) {
@@ -825,7 +871,8 @@ function fmt(n) {
 
 function clearSearch(id) {
   document.getElementById(id).value = '';
-  if(id==='searchNombre') filtrarProductos();
+  if(id==='searchNombre' || id==='searchContiene') filtrarProductos();
+  else if(id==='searchNombreCod') filtrarPorCodigo('nombre');
   else if(id==='searchCodigo'||id==='searchFabrica') filtrarPorCodigo(id==='searchCodigo'?'interno':'fabrica');
   else if(id==='presupSearch') { document.getElementById('presupResults').innerHTML=''; }
 }
@@ -865,10 +912,35 @@ function addToPresupFromModal() {
 function setPresupCounter() {
   const today = new Date();
   document.getElementById('pFecha').value = today.toISOString().split('T')[0];
-  // Lee el número actual guardado (sin sumar — solo incrementa al guardar/limpiar)
-  const saved = parseInt(localStorage.getItem('mm_presup_num') || '1');
-  presupCounter = saved;
+  // Mostrar número local mientras carga el global
+  const local = parseInt(localStorage.getItem('mm_presup_num') || '1');
+  presupCounter = local;
   document.getElementById('pNumero').value = String(presupCounter).padStart(4,'0');
+  // Consultar el último número al Apps Script (compartido entre dispositivos)
+  obtenerUltimoNumero();
+}
+
+async function obtenerUltimoNumero() {
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfxv4fw15ouak9MSPY-0GXV9SxovhO4z-_SFq3fCRR93CRPsjer1rUtu0iwpfMOZ9xEg/exec';
+  try {
+    const cbName = 'mm_num_cb_' + Date.now();
+    const script = document.createElement('script');
+    const timer = setTimeout(() => { delete window[cbName]; if(script.parentNode) script.parentNode.removeChild(script); }, 10000);
+    window[cbName] = function(json) {
+      clearTimeout(timer);
+      delete window[cbName];
+      if(script.parentNode) script.parentNode.removeChild(script);
+      if (json.ok && json.ultimo_numero) {
+        const global = parseInt(json.ultimo_numero) + 1;
+        presupCounter = Math.max(global, parseInt(localStorage.getItem('mm_presup_num') || '1'));
+        localStorage.setItem('mm_presup_num', presupCounter);
+        document.getElementById('pNumero').value = String(presupCounter).padStart(4,'0');
+      }
+    };
+    script.src = APPS_SCRIPT_URL + '?action=ultimoPresupuesto&callback=' + cbName + '&t=' + Date.now();
+    script.onerror = () => { clearTimeout(timer); delete window[cbName]; };
+    document.head.appendChild(script);
+  } catch(e) {}
 }
 
 function incrementarNumero() {
@@ -884,7 +956,7 @@ function addToPresup(id) {
   if(existing) {
     existing.qty++;
   } else {
-    presupItems.push({ id, codigo: p.codigo, descripcion: p.descripcion, precio: p.precio_lista2, qty: 1 });
+    presupItems.push({ id, codigo: p.codigo, descripcion: p.descripcion, precio: listaActiva === 1 ? p.precio_lista1 : p.precio_lista2, qty: 1 });
   }
   renderPresup();
   // Visual feedback
