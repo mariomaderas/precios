@@ -33,8 +33,10 @@
     box-shadow: 0 2px 12px rgba(34,34,204,.3);
   }
   .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-  .logo { font-family: 'Barlow Condensed', sans-serif; font-size: 1.7rem; font-weight: 800; letter-spacing: 1px; }
+  .logo { font-family: 'Barlow Condensed', sans-serif; font-size: 1.7rem; font-weight: 800; letter-spacing: 1px; cursor: pointer; }
   .logo span { color: var(--acento); }
+  .logo img { height: 44px; max-width: 180px; object-fit: contain; display: block; }
+  #logoInput { display: none; }
   .badge-fecha { font-size: .7rem; opacity: .7; text-align: right; }
 
   /* TABS */
@@ -300,7 +302,11 @@
 
 <div class="header">
   <div class="header-top">
-    <div class="logo">MARIO <span>MADERAS</span></div>
+    <div class="logo" onclick="document.getElementById('logoInput').click()" title="Toca para cambiar el logo">
+      <img id="logoImg" src="" alt="MARIO MADERAS" onerror="this.style.display='none';document.getElementById('logoTxt').style.display='block';" style="display:none;">
+      <span id="logoTxt">MARIO <span>MADERAS</span></span>
+    </div>
+    <input type="file" id="logoInput" accept="image/png,image/jpeg,image/webp" onchange="cambiarLogo(this)">
     <div class="badge-fecha" id="fechaActual">Cargando...</div>
   </div>
   <div class="tabs">
@@ -1028,9 +1034,10 @@ function buscarParaPresup() {
     document.getElementById('presupResults').innerHTML = '<div style="text-align:center;padding:20px;color:var(--gris);">⏳ Cargando productos...</div>';
     return;
   }
-  const res = allProducts.filter(p =>
-    p.descripcion.toLowerCase().includes(q) || p.codigo.toLowerCase().includes(q)
-  ).slice(0,15);
+  // Primero los que empiezan con q, luego los que contienen q (orden alfabético dentro de cada grupo)
+  const empiezan = allProducts.filter(p => p.descripcion.toLowerCase().startsWith(q)).sort((a,b) => a.descripcion.localeCompare(b.descripcion));
+  const contienen = allProducts.filter(p => !p.descripcion.toLowerCase().startsWith(q) && (p.descripcion.toLowerCase().includes(q) || p.codigo.toLowerCase().includes(q))).sort((a,b) => a.descripcion.localeCompare(b.descripcion));
+  const res = [...empiezan, ...contienen].slice(0,15);
 
   document.getElementById('presupResults').innerHTML = res.length ? res.map(p => `
     <div class="presup-result-item" onclick="addToPresup(${p.id});document.getElementById('presupSearch').value='';document.getElementById('presupResults').innerHTML='';">
@@ -1174,8 +1181,21 @@ function getPresupText() {
   return txt;
 }
 
+function _validarVendedor() {
+  const v = document.getElementById('pVendedor').value.trim();
+  if (!v) {
+    document.getElementById('pVendedor').focus();
+    document.getElementById('pVendedor').style.borderColor = 'var(--rojo)';
+    setTimeout(() => { document.getElementById('pVendedor').style.borderColor = ''; }, 2000);
+    _mostrarToast('⚠️ Ingresá el nombre del vendedor');
+    return false;
+  }
+  return true;
+}
+
 function compartirWhatsapp() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
+  if(!_validarVendedor()) return;
   autoGuardarDrive();
   const txt = getPresupText();
   window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank');
@@ -1183,6 +1203,7 @@ function compartirWhatsapp() {
 
 function compartirMail() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
+  if(!_validarVendedor()) return;
   autoGuardarDrive();
   const cliente = document.getElementById('pCliente').value || '';
   const num = document.getElementById('pNumero').value;
@@ -1238,6 +1259,7 @@ function _mostrarToast(msg) {
 
 function compartirInstagram() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
+  if(!_validarVendedor()) return;
   autoGuardarDrive();
   const txt = getPresupText().replace(/\*/g,'').replace(/_/g,'');
   _copiarYAbrir(txt, 'https://www.instagram.com/direct/inbox/', 'Instagram');
@@ -1245,6 +1267,7 @@ function compartirInstagram() {
 
 function compartirMessenger() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
+  if(!_validarVendedor()) return;
   autoGuardarDrive();
   const txt = getPresupText().replace(/\*/g,'').replace(/_/g,'');
   _copiarYAbrir(txt, 'https://www.messenger.com/', 'Messenger');
@@ -1253,6 +1276,7 @@ function compartirMessenger() {
 // ─── PDF LOCAL (IMPRIMIR / GUARDAR) ─────────────────────────
 function exportarPDF() {
   if (presupItems.length === 0) { alert('Agregá productos primero'); return; }
+  if(!_validarVendedor()) return;
   autoGuardarDrive();
   const cliente  = document.getElementById('pCliente').value || 'Sin especificar';
   const vendedor = document.getElementById('pVendedor').value || '';
@@ -1418,6 +1442,7 @@ function agregarProductoLibre() {
 // ─── GUARDAR EN DRIVE VIA APPS SCRIPT ──────────────────────
 async function guardarEnDrive() {
   if (presupItems.length === 0) { alert('Agregá productos primero'); return; }
+  if(!_validarVendedor()) return;
 
   const cliente  = document.getElementById('pCliente').value || 'Sin nombre';
   const vendedor = document.getElementById('pVendedor').value || '';
@@ -1479,6 +1504,35 @@ async function guardarEnDrive() {
 
 
 
+// ==================== LOGO ====================
+function cambiarLogo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = document.getElementById('logoImg');
+    const txt = document.getElementById('logoTxt');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    txt.style.display = 'none';
+    try { localStorage.setItem('mm_logo', e.target.result); } catch(ex) {}
+  };
+  reader.readAsDataURL(file);
+}
+
+function cargarLogoGuardado() {
+  try {
+    const saved = localStorage.getItem('mm_logo');
+    if (saved) {
+      const img = document.getElementById('logoImg');
+      const txt = document.getElementById('logoTxt');
+      img.src = saved;
+      img.style.display = 'block';
+      txt.style.display = 'none';
+    }
+  } catch(e) {}
+}
+
 // ==================== TAB SWITCH ====================
 function switchTab(tab) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -1488,6 +1542,7 @@ function switchTab(tab) {
 }
 
 // ==================== START ====================
+cargarLogoGuardado();
 loadData();
 </script>
 </body>
