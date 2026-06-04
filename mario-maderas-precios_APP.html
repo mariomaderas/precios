@@ -529,7 +529,7 @@ let selectedFabricaFilter = '';
 let modalProduct = null;
 let presupCounter = 1;
 let listaActiva = 2;
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfxv4fw15ouak9MSPY-0GXV9SxovhO4z-_SFq3fCRR93CRPsjer1rUtu0iwpfMOZ9xEg/exec'; // Por defecto Lista 2
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRXNZe9L9hh6vVx7eGhIx4dR1jwdRfbvg0Knv4U8mUrRMzQN0jSTJvtLFj7sr-LGOu9A/exec'; // Por defecto Lista 2
 
 function setLista(num) {
   listaActiva = num;
@@ -553,7 +553,7 @@ function setLista(num) {
 // La hoja tiene: codigo, cod_fabrica, descripcion, precio_lista1, precio_lista2
 
 function loadData() {
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfxv4fw15ouak9MSPY-0GXV9SxovhO4z-_SFq3fCRR93CRPsjer1rUtu0iwpfMOZ9xEg/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRXNZe9L9hh6vVx7eGhIx4dR1jwdRfbvg0Knv4U8mUrRMzQN0jSTJvtLFj7sr-LGOu9A/exec';
   const CACHE_KEY = 'mm_productos_cache';
   const CACHE_TIME_KEY = 'mm_productos_time';
   const CACHE_TTL = 5 * 60 * 1000; // 5 minutos — actualiza cada 5 min en segundo plano
@@ -946,7 +946,7 @@ function setPresupCounter() {
 }
 
 async function obtenerUltimoNumero() {
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfxv4fw15ouak9MSPY-0GXV9SxovhO4z-_SFq3fCRR93CRPsjer1rUtu0iwpfMOZ9xEg/exec';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRXNZe9L9hh6vVx7eGhIx4dR1jwdRfbvg0Knv4U8mUrRMzQN0jSTJvtLFj7sr-LGOu9A/exec';
   try {
     const cbName = 'mm_num_cb_' + Date.now();
     const script = document.createElement('script');
