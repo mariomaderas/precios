@@ -1285,6 +1285,12 @@ function exportarPDF() {
   const fecha = `${dd}/${mm}/${yy}`;
   const num   = document.getElementById('pNumero').value;
   const obs   = document.getElementById('pObs').value;
+  // Logo: obtener antes de construir el HTML
+  let logoHtml = '<span style="font-family:Barlow Condensed,sans-serif;font-size:1.6rem;font-weight:900;letter-spacing:2px;">MARIO <span style=\"color:#5dc9a8\">MADERAS</span></span><div style=\"font-size:.8rem;opacity:.8;margin-top:2px;\">Ferretería y Materiales de Construcción</div>';
+  try {
+    const savedLogo = localStorage.getItem('mm_logo');
+    if (savedLogo) logoHtml = '<img src=\"' + savedLogo + '\" style=\"height:44px;max-width:160px;object-fit:contain;\" alt=\"Logo\">';
+  } catch(e) {}
   const total = presupItems.reduce((s, i) => s + i.precio*(1-(i.descuento||0)/100) * i.qty, 0);
   const items = presupItems.reduce((s, i) => s + i.qty, 0);
 
@@ -1295,7 +1301,7 @@ function exportarPDF() {
       <td style="padding:7px 10px;border-bottom:1px solid #eee;font-size:.82rem;">${item.codigo}</td>
       <td style="padding:7px 10px;border-bottom:1px solid #eee;font-size:.82rem;">${item.descripcion}</td>
       <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center;">${item.qty}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center;color:${(item.lista||2)===1?'#e03b3b':'#2222cc'};font-weight:700;">L${item.lista||2}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center;font-weight:700;">L${item.lista||2}</td>
       <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center;color:#e03b3b;font-size:.78rem;">${(item.descuento||0)>0?'-'+item.descuento+'%':''}</td>
       <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:right;">${fmt(precioConDesc)}</td>
       <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:right;font-weight:700;color:#2222cc;">${fmt(precioConDesc*item.qty)}</td>
@@ -1320,7 +1326,7 @@ function exportarPDF() {
     @media print{button{display:none!important;}}
   </style></head><body>
   <div class="header">
-    <div><div class="logo">MARIO <span>MADERAS</span></div><div style="font-size:.8rem;opacity:.8;margin-top:2px;">Ferretería y Materiales de Construcción</div></div>
+    <div style="display:flex;align-items:center;gap:10px;">${logoHtml}</div>
     <div style="text-align:right;"><div style="font-size:1.1rem;font-weight:800;">PRESUPUESTO N° ${num}</div><div style="opacity:.8;font-size:.82rem;">${fecha}</div></div>
   </div>
   <div class="info-grid">
@@ -1329,7 +1335,7 @@ function exportarPDF() {
     ${obs?`<div class="info-box" style="grid-column:1/-1"><div class="info-label">Observaciones</div><div class="info-val" style="font-weight:400;font-size:.88rem;">${obs}</div></div>`:''}
   </div>
   <table>
-    <thead><tr><th>Código</th><th>Descripción</th><th style="text-align:center">Cant.</th><th style="text-align:center">Lista</th><th style="text-align:center">Desc.</th><th style="text-align:right">Unit.</th><th style="text-align:right">Total</th></tr></thead>
+    <thead><tr><th>Código</th><th>Descripción</th><th style="text-align:center">Cant.</th><th style="text-align:center">L</th><th style="text-align:center">Desc.</th><th style="text-align:right">Unit.</th><th style="text-align:right">Total</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
   <div class="total-box">
@@ -1521,16 +1527,46 @@ function cambiarLogo(input) {
 }
 
 function cargarLogoGuardado() {
+  const img = document.getElementById('logoImg');
+  const txt = document.getElementById('logoTxt');
+  // Primero intentar localStorage (logo personalizado ya en base64)
   try {
     const saved = localStorage.getItem('mm_logo');
     if (saved) {
-      const img = document.getElementById('logoImg');
-      const txt = document.getElementById('logoTxt');
       img.src = saved;
       img.style.display = 'block';
       txt.style.display = 'none';
+      return;
     }
   } catch(e) {}
+  // Fallback: cargar logo.png y convertirlo a base64 para que funcione en PDF
+  const tempImg = new Image();
+  tempImg.crossOrigin = 'anonymous';
+  tempImg.onload = function() {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = tempImg.naturalWidth;
+      canvas.height = tempImg.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(tempImg, 0, 0);
+      const b64 = canvas.toDataURL('image/png');
+      img.src = b64;
+      img.style.display = 'block';
+      txt.style.display = 'none';
+      try { localStorage.setItem('mm_logo', b64); } catch(ex) {}
+    } catch(ex) {
+      // Si falla (CORS etc), mostrar la img directamente
+      img.src = 'logo.png';
+      img.style.display = 'block';
+      txt.style.display = 'none';
+    }
+  };
+  tempImg.onerror = function() {
+    // No existe logo.png — mostrar texto
+    img.style.display = 'none';
+    txt.style.display = 'block';
+  };
+  tempImg.src = 'logo.png';
 }
 
 // ==================== TAB SWITCH ====================
