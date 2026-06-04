@@ -428,6 +428,30 @@
       <div class="presup-result-list" id="presupResults"></div>
     </div>
 
+    <!-- Producto libre -->
+    <div class="presup-search">
+      <h3 style="cursor:pointer;" onclick="toggleProductoLibre()">&#x270F;&#xFE0F; Agregar producto libre <span id="productoLibreArrow" style="font-size:.8rem;opacity:.6;">&#9660;</span></h3>
+      <div id="productoLibreForm" style="display:none;margin-top:8px;">
+        <div style="margin-bottom:8px;">
+          <input type="text" id="plDesc" placeholder="Descripci&#xF3;n del producto..." autocomplete="off"
+            style="width:100%;border:1.5px solid var(--borde);border-radius:8px;padding:9px 12px;font-family:'Barlow',sans-serif;font-size:.9rem;color:var(--texto);background:var(--bg);outline:none;box-sizing:border-box;">
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div style="position:relative;flex:1;">
+            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--gris);font-size:.9rem;pointer-events:none;">$</span>
+            <input type="number" id="plPrecio" placeholder="0.00" min="0" step="0.01"
+              style="width:100%;border:1.5px solid var(--borde);border-radius:8px;padding:9px 12px 9px 22px;font-family:'Barlow Condensed',sans-serif;font-size:1rem;color:var(--texto);background:var(--bg);outline:none;box-sizing:border-box;">
+          </div>
+          <input type="number" id="plQty" min="1" value="1"
+            style="width:64px;border:1.5px solid var(--borde);border-radius:8px;padding:9px 6px;font-family:'Barlow',sans-serif;font-size:.9rem;color:var(--texto);background:var(--bg);outline:none;text-align:center;">
+          <button onclick="agregarProductoLibre()"
+            style="background:var(--azul);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">
+            + Agregar
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Tabla de presupuesto -->
     <div class="presup-table-wrap" id="presupTableWrap" style="display:none;">
       <h3>Detalle del Presupuesto</h3>
@@ -1102,12 +1126,14 @@ function getPresupText() {
 
 function compartirWhatsapp() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
+  autoGuardarDrive();
   const txt = getPresupText();
   window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank');
 }
 
 function compartirMail() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
+  autoGuardarDrive();
   const cliente = document.getElementById('pCliente').value || '';
   const num = document.getElementById('pNumero').value;
   const txt = getPresupText().replace(/\*/g,'').replace(/_/g,'');
@@ -1117,6 +1143,7 @@ function compartirMail() {
 
 function compartirInstagram() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
+  autoGuardarDrive();
   const txt = getPresupText().replace(/\*/g,'').replace(/_/g,'');
   // Instagram no tiene API de compartir web — copiamos al portapapeles y abrimos la app
   if(navigator.clipboard) {
@@ -1131,6 +1158,7 @@ function compartirInstagram() {
 
 function compartirMessenger() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
+  autoGuardarDrive();
   const txt = getPresupText().replace(/\*/g,'').replace(/_/g,'');
   // Messenger: copiar y abrir
   if(navigator.clipboard) {
@@ -1141,6 +1169,153 @@ function compartirMessenger() {
   } else {
     window.open('https://www.messenger.com/', '_blank');
   }
+}
+
+// ─── PDF LOCAL (IMPRIMIR / GUARDAR) ─────────────────────────
+function exportarPDF() {
+  if (presupItems.length === 0) { alert('Agregá productos primero'); return; }
+  autoGuardarDrive();
+  const cliente = document.getElementById('pCliente').value || 'Sin especificar';
+  const fechaRaw = document.getElementById('pFecha').value;
+  const [yy, mm, dd] = fechaRaw.split('-');
+  const fecha = `${dd}/${mm}/${yy}`;
+  const num   = document.getElementById('pNumero').value;
+  const obs   = document.getElementById('pObs').value;
+  const total = presupItems.reduce((s, i) => s + i.precio * i.qty, 0);
+  const items = presupItems.reduce((s, i) => s + i.qty, 0);
+
+  const rows = presupItems.map((item, i) => `
+    <tr style="background:${i%2?'#f8f9ff':'#fff'}">
+      <td style="padding:7px 10px;border-bottom:1px solid #eee;font-size:.82rem;">${item.codigo}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #eee;font-size:.82rem;">${item.descripcion}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center;">${item.qty}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center;color:${(item.lista||2)===1?'#e03b3b':'#2222cc'};font-weight:700;">L${item.lista||2}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:right;">${fmt(item.precio)}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:right;font-weight:700;color:#2222cc;">${fmt(item.precio*item.qty)}</td>
+    </tr>`).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <style>
+    body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1a1a2e;}
+    .header{background:#2222cc;color:#fff;padding:16px 20px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+    .logo{font-size:1.6rem;font-weight:900;letter-spacing:2px;}
+    .logo span{color:#5dc9a8;}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+    .info-box{background:#f2f3f7;border-radius:7px;padding:10px 12px;}
+    .info-label{font-size:.68rem;text-transform:uppercase;color:#6b7280;margin-bottom:2px;}
+    .info-val{font-size:.95rem;font-weight:700;}
+    table{width:100%;border-collapse:collapse;margin-bottom:14px;}
+    thead{background:#2222cc;color:#fff;}
+    th{padding:8px 10px;text-align:left;font-size:.82rem;}
+    .total-box{background:#2222cc;color:#fff;padding:14px 18px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;}
+    .footer{margin-top:14px;font-size:.72rem;color:#9ca3af;text-align:center;border-top:1px solid #eee;padding-top:10px;}
+    @media print{button{display:none!important;}}
+  </style></head><body>
+  <div class="header">
+    <div><div class="logo">MARIO <span>MADERAS</span></div><div style="font-size:.8rem;opacity:.8;margin-top:2px;">Ferretería y Materiales de Construcción</div></div>
+    <div style="text-align:right;"><div style="font-size:1.1rem;font-weight:800;">PRESUPUESTO N° ${num}</div><div style="opacity:.8;font-size:.82rem;">${fecha}</div></div>
+  </div>
+  <div class="info-grid">
+    <div class="info-box"><div class="info-label">Cliente</div><div class="info-val">${cliente}</div></div>
+    <div class="info-box"><div class="info-label">Total artículos</div><div class="info-val">${items} unidad${items!==1?'es':''}</div></div>
+    ${obs?`<div class="info-box" style="grid-column:1/-1"><div class="info-label">Observaciones</div><div class="info-val" style="font-weight:400;font-size:.88rem;">${obs}</div></div>`:''}
+  </div>
+  <table>
+    <thead><tr><th>Código</th><th>Descripción</th><th style="text-align:center">Cant.</th><th style="text-align:center">Lista</th><th style="text-align:right">Unit.</th><th style="text-align:right">Total</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="total-box">
+    <div><div style="font-size:.85rem;opacity:.8;">TOTAL DEL PRESUPUESTO</div><div style="font-size:.75rem;opacity:.65;">${items} artículo${items!==1?'s':''}</div></div>
+    <div style="font-size:1.6rem;font-weight:900;">${fmt(total)}</div>
+  </div>
+  <div class="footer">Mario Maderas — Precios con IVA incluido. Sujetos a cambio sin previo aviso.</div>
+  <br>
+  <button onclick="window.print()" style="background:#2222cc;color:#fff;border:none;padding:11px 22px;border-radius:8px;font-size:.95rem;cursor:pointer;margin-right:8px;">🖨️ Imprimir / Guardar PDF</button>
+  <button onclick="window.close()" style="background:#f2f3f7;border:1.5px solid #e2e5ef;padding:11px 22px;border-radius:8px;font-size:.95rem;cursor:pointer;">✕ Cerrar</button>
+  </body></html>`;
+
+  const win = window.open('', '_blank');
+  if (win) { win.document.write(html); win.document.close(); }
+  else { alert('El navegador bloqueó la ventana emergente. Permitila para ver el PDF.'); }
+}
+
+// ─── AUTO GUARDADO SILENCIOSO EN DRIVE ─────────────────────
+// Guarda en Drive + Sheet en segundo plano sin bloquear la UI
+// Evita guardar el mismo número dos veces en la misma sesión
+let _ultimoNumeroGuardado = null;
+
+function autoGuardarDrive() {
+  const num = document.getElementById('pNumero').value;
+  if (_ultimoNumeroGuardado === num) return; // ya guardado este número
+  _ultimoNumeroGuardado = num;
+  // Guardar en segundo plano (fire & forget)
+  _ejecutarGuardarDrive(num).catch(e => console.warn('autoGuardar:', e.message));
+}
+
+async function _ejecutarGuardarDrive(num) {
+  const cliente  = document.getElementById('pCliente').value || 'Sin nombre';
+  const fechaRaw = document.getElementById('pFecha').value;
+  const [yy, mm, dd] = fechaRaw.split('-');
+  const fecha    = `${dd}/${mm}/${yy}`;
+  const obs      = document.getElementById('pObs').value;
+  const total    = presupItems.reduce((s, i) => s + i.precio * i.qty, 0);
+  const itemsDetalle = presupItems.map(i => ({
+    codigo: i.codigo || '—',
+    descripcion: i.descripcion,
+    qty: i.qty,
+    precio: i.precio,
+    total: i.precio * i.qty,
+    lista: i.lista || 2
+  }));
+  const resp = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'guardarPresupuesto',
+      presupuesto: {
+        numero: num, fecha, cliente, obs, total,
+        items: presupItems.map(i => `[${i.codigo||'*'}] ${i.descripcion} x${i.qty} = ${fmt(i.precio*i.qty)}`).join(' | '),
+        itemsDetalle,
+        guardarPDF: true,
+        carpetaId: '1qMP6LnwbeuJll8LlaqbuE5W8LT3aZob1'
+      }
+    })
+  });
+  const json = await resp.json();
+  if (json.ok) {
+    incrementarNumero();
+  }
+}
+
+// ─── PRODUCTO LIBRE ──────────────────────────────────────────
+function toggleProductoLibre() {
+  const form  = document.getElementById('productoLibreForm');
+  const arrow = document.getElementById('productoLibreArrow');
+  const open  = form.style.display === 'none';
+  form.style.display  = open ? 'block' : 'none';
+  arrow.textContent   = open ? '▲' : '▼';
+  if (open) document.getElementById('plDesc').focus();
+}
+
+function agregarProductoLibre() {
+  const desc   = document.getElementById('plDesc').value.trim();
+  const precio = parseFloat(document.getElementById('plPrecio').value);
+  const qty    = parseInt(document.getElementById('plQty').value) || 1;
+  if (!desc)           { document.getElementById('plDesc').focus();   return; }
+  if (!precio || precio <= 0) { document.getElementById('plPrecio').focus(); return; }
+  presupItems.push({
+    id: 'libre_' + Date.now(),
+    codigo: '',
+    descripcion: desc,
+    precio: precio,
+    qty: qty,
+    lista: 2
+  });
+  // Limpiar campos
+  document.getElementById('plDesc').value  = '';
+  document.getElementById('plPrecio').value = '';
+  document.getElementById('plQty').value   = 1;
+  document.getElementById('plDesc').focus();
+  renderPresup();
 }
 
 // ─── GUARDAR EN DRIVE VIA APPS SCRIPT ──────────────────────
