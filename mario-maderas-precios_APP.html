@@ -748,7 +748,19 @@ function cargarUltimaActualizacion() {
     delete window[cbName];
     if(script.parentNode) script.parentNode.removeChild(script);
     if (json.ok && json.config && json.config.ultima_actualizacion) {
-      const ua = json.config.ultima_actualizacion;
+      let ua = json.config.ultima_actualizacion;
+      // Si viene como fecha completa de Google, formatearla como DD/MM/AAAA HH:MM
+      try {
+        const d = new Date(ua);
+        if (!isNaN(d.getTime())) {
+          const dd = String(d.getDate()).padStart(2,'0');
+          const mm = String(d.getMonth()+1).padStart(2,'0');
+          const yyyy = d.getFullYear();
+          const hh = String(d.getHours()).padStart(2,'0');
+          const min = String(d.getMinutes()).padStart(2,'0');
+          ua = dd+'/'+mm+'/'+yyyy+' '+hh+':'+min;
+        }
+      } catch(e) {}
       document.getElementById('fechaActual').innerHTML = '🟢 ' + ua;
     }
   };
