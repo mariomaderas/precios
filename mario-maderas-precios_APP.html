@@ -739,17 +739,24 @@ async function loadStaticData() {
 }
 
 function cargarUltimaActualizacion() {
-  // Lee fila 25b (key=ultima_actualizacion) del sheet config
+  const el = document.getElementById('fechaActual');
   const cbName = 'mm_config_cb_' + Date.now();
   const script = document.createElement('script');
-  const timer = setTimeout(() => { delete window[cbName]; if(script.parentNode) script.parentNode.removeChild(script); }, 8000);
+  // Timeout: si en 6 seg no responde, mostrar fecha de hoy
+  const timer = setTimeout(() => {
+    delete window[cbName];
+    if(script.parentNode) script.parentNode.removeChild(script);
+    const hoy = new Date();
+    const dd = String(hoy.getDate()).padStart(2,'0');
+    const mm = String(hoy.getMonth()+1).padStart(2,'0');
+    el.innerHTML = dd+'/'+mm+'/'+hoy.getFullYear();
+  }, 6000);
   window[cbName] = function(json) {
     clearTimeout(timer);
     delete window[cbName];
     if(script.parentNode) script.parentNode.removeChild(script);
     if (json.ok && json.config && json.config.ultima_actualizacion) {
       let ua = json.config.ultima_actualizacion;
-      // Si viene como fecha completa de Google, formatearla como DD/MM/AAAA HH:MM
       try {
         const d = new Date(ua);
         if (!isNaN(d.getTime())) {
@@ -761,11 +768,23 @@ function cargarUltimaActualizacion() {
           ua = dd+'/'+mm+'/'+yyyy+' '+hh+':'+min;
         }
       } catch(e) {}
-      document.getElementById('fechaActual').innerHTML = '🟢 ' + ua;
+      el.innerHTML = '🟢 ' + ua;
+    } else {
+      const hoy = new Date();
+      const dd = String(hoy.getDate()).padStart(2,'0');
+      const mm = String(hoy.getMonth()+1).padStart(2,'0');
+      el.innerHTML = dd+'/'+mm+'/'+hoy.getFullYear();
     }
   };
   script.src = APPS_SCRIPT_URL + '?action=config&callback=' + cbName + '&t=' + Date.now();
-  script.onerror = () => { clearTimeout(timer); delete window[cbName]; };
+  script.onerror = () => {
+    clearTimeout(timer);
+    delete window[cbName];
+    const hoy = new Date();
+    const dd = String(hoy.getDate()).padStart(2,'0');
+    const mm = String(hoy.getMonth()+1).padStart(2,'0');
+    el.innerHTML = dd+'/'+mm+'/'+hoy.getFullYear();
+  };
   document.head.appendChild(script);
 }
 
