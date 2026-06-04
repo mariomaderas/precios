@@ -1607,6 +1607,8 @@ function switchTab(tab) {
 }
 
 // ==================== START ====================
+// Limpiar caché de config para que siempre traiga fecha fresca
+try { localStorage.removeItem('mm_config'); } catch(e) {}
 cargarLogoGuardado();
 loadData();
 </script>
