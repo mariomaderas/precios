@@ -635,10 +635,6 @@ function actualizarEnSegundoPlano(url, cacheKey, cacheTimeKey) {
     buildAlphaStrip();
     buildFabricaFilters();
     renderProducts(filtered, 'productList', 'resultsCount');
-    const now = new Date();
-    document.getElementById('fechaActual').innerHTML =
-      '🟢 ' + now.toLocaleDateString('es-AR') + ' ' +
-      now.toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
     // Cargar fecha de actualización del sheet desde config
     cargarUltimaActualizacion();
   };
@@ -739,52 +735,55 @@ async function loadStaticData() {
 }
 
 function cargarUltimaActualizacion() {
+  // Usa action=config que ya funciona con la misma URL
   const el = document.getElementById('fechaActual');
-  const cbName = 'mm_config_cb_' + Date.now();
+  if (window.location.protocol === 'file:') {
+    el.innerHTML = new Date().toLocaleDateString('es-AR');
+    return;
+  }
+  const cbName = 'mm_ua_' + Date.now();
   const script = document.createElement('script');
-  // Timeout: si en 6 seg no responde, mostrar fecha de hoy
   const timer = setTimeout(() => {
     delete window[cbName];
     if(script.parentNode) script.parentNode.removeChild(script);
-    const hoy = new Date();
-    const dd = String(hoy.getDate()).padStart(2,'0');
-    const mm = String(hoy.getMonth()+1).padStart(2,'0');
-    el.innerHTML = dd+'/'+mm+'/'+hoy.getFullYear();
-  }, 6000);
+    // Fallback: fecha de hoy
+    const h = new Date();
+    el.innerHTML = String(h.getDate()).padStart(2,'0')+'/'+String(h.getMonth()+1).padStart(2,'0')+'/'+h.getFullYear();
+  }, 10000);
   window[cbName] = function(json) {
     clearTimeout(timer);
     delete window[cbName];
     if(script.parentNode) script.parentNode.removeChild(script);
-    if (json.ok && json.config && json.config.ultima_actualizacion) {
-      let ua = json.config.ultima_actualizacion;
+    let ua = '';
+    if (json.ok && json.config) ua = json.config.ultima_actualizacion || '';
+    if (ua) {
+      // ua puede venir como "04/06/2026 10:31" (texto del sheet) — usarlo directo
+      // o como fecha JS larga — parsear y reformatear
       try {
-        const d = new Date(ua);
-        if (!isNaN(d.getTime())) {
-          const dd = String(d.getDate()).padStart(2,'0');
-          const mm = String(d.getMonth()+1).padStart(2,'0');
-          const yyyy = d.getFullYear();
-          const hh = String(d.getHours()).padStart(2,'0');
-          const min = String(d.getMinutes()).padStart(2,'0');
-          ua = dd+'/'+mm+'/'+yyyy+' '+hh+':'+min;
+        // Si ya tiene formato DD/MM/AAAA, usarlo directo
+        if (!/^\d{2}\/\d{2}\/\d{4}/.test(ua)) {
+          const d = new Date(ua);
+          if (!isNaN(d.getTime()) && d.getFullYear() > 2020) {
+            const dd = String(d.getDate()).padStart(2,'0');
+            const mm = String(d.getMonth()+1).padStart(2,'0');
+            const hh = String(d.getHours()).padStart(2,'0');
+            const min = String(d.getMinutes()).padStart(2,'0');
+            ua = dd+'/'+mm+'/'+d.getFullYear()+' '+hh+':'+min;
+          }
         }
       } catch(e) {}
       el.innerHTML = '🟢 ' + ua;
     } else {
-      const hoy = new Date();
-      const dd = String(hoy.getDate()).padStart(2,'0');
-      const mm = String(hoy.getMonth()+1).padStart(2,'0');
-      el.innerHTML = dd+'/'+mm+'/'+hoy.getFullYear();
+      const h = new Date();
+      el.innerHTML = String(h.getDate()).padStart(2,'0')+'/'+String(h.getMonth()+1).padStart(2,'0')+'/'+h.getFullYear();
     }
   };
-  script.src = APPS_SCRIPT_URL + '?action=config&callback=' + cbName + '&t=' + Date.now();
   script.onerror = () => {
-    clearTimeout(timer);
-    delete window[cbName];
-    const hoy = new Date();
-    const dd = String(hoy.getDate()).padStart(2,'0');
-    const mm = String(hoy.getMonth()+1).padStart(2,'0');
-    el.innerHTML = dd+'/'+mm+'/'+hoy.getFullYear();
+    clearTimeout(timer); delete window[cbName];
+    const h = new Date();
+    el.innerHTML = String(h.getDate()).padStart(2,'0')+'/'+String(h.getMonth()+1).padStart(2,'0')+'/'+h.getFullYear();
   };
+  script.src = APPS_SCRIPT_URL + '?action=config&callback=' + cbName + '&t=' + Date.now();
   document.head.appendChild(script);
 }
 
