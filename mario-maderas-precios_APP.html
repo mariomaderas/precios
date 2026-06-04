@@ -528,7 +528,8 @@ let selectedCategory = '';
 let selectedFabricaFilter = '';
 let modalProduct = null;
 let presupCounter = 1;
-let listaActiva = 2; // Por defecto Lista 2
+let listaActiva = 2;
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfxv4fw15ouak9MSPY-0GXV9SxovhO4z-_SFq3fCRR93CRPsjer1rUtu0iwpfMOZ9xEg/exec'; // Por defecto Lista 2
 
 function setLista(num) {
   listaActiva = num;
@@ -1319,8 +1320,6 @@ function agregarProductoLibre() {
 }
 
 // ─── GUARDAR EN DRIVE VIA APPS SCRIPT ──────────────────────
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfxv4fw15ouak9MSPY-0GXV9SxovhO4z-_SFq3fCRR93CRPsjer1rUtu0iwpfMOZ9xEg/exec';
-
 async function guardarEnDrive() {
   if (presupItems.length === 0) { alert('Agregá productos primero'); return; }
 
