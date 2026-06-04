@@ -391,6 +391,10 @@
           <label>Cliente</label>
           <input type="text" id="pCliente" placeholder="Nombre del cliente" value="Consumidor final">
         </div>
+        <div class="form-field full">
+          <label>Vendedor</label>
+          <input type="text" id="pVendedor" placeholder="Nombre del vendedor">
+        </div>
         <div class="form-field">
           <label>Fecha</label>
           <input type="date" id="pFecha">
@@ -460,9 +464,10 @@
           <thead>
             <tr>
               <th>Cód.</th>
-              <th style="min-width:100px;">Producto</th>
+              <th style="min-width:90px;">Producto</th>
               <th>Cant.</th>
               <th>Lista/Unit.</th>
+              <th>Desc%</th>
               <th>Total</th>
               <th></th>
             </tr>
@@ -470,7 +475,7 @@
           <tbody id="presupTbody"></tbody>
           <tfoot>
             <tr class="total-row">
-              <td colspan="4" style="text-align:right;">TOTAL</td>
+              <td colspan="5" style="text-align:right;">TOTAL</td>
               <td id="totalPresup">$0</td>
               <td></td>
             </tr>
@@ -628,6 +633,8 @@ function actualizarEnSegundoPlano(url, cacheKey, cacheTimeKey) {
     document.getElementById('fechaActual').innerHTML =
       '🟢 ' + now.toLocaleDateString('es-AR') + ' ' +
       now.toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
+    // Cargar fecha de actualización del sheet desde config
+    cargarUltimaActualizacion();
   };
   script.src = url + '?action=all&callback=' + cbName + '&t=' + Date.now();
   script.onerror = () => { clearTimeout(timer); delete window[cbName]; };
@@ -724,6 +731,25 @@ async function loadStaticData() {
     console.error('Error descomprimiendo:', e);
     document.getElementById('productList').innerHTML = '<div class="no-results"><span class="emoji">⚠️</span>Error cargando datos. Recargá la página.</div>';
   }
+}
+
+function cargarUltimaActualizacion() {
+  // Lee fila 25b (key=ultima_actualizacion) del sheet config
+  const cbName = 'mm_config_cb_' + Date.now();
+  const script = document.createElement('script');
+  const timer = setTimeout(() => { delete window[cbName]; if(script.parentNode) script.parentNode.removeChild(script); }, 8000);
+  window[cbName] = function(json) {
+    clearTimeout(timer);
+    delete window[cbName];
+    if(script.parentNode) script.parentNode.removeChild(script);
+    if (json.ok && json.config && json.config.ultima_actualizacion) {
+      const ua = json.config.ultima_actualizacion;
+      document.getElementById('fechaActual').innerHTML = '🟢 ' + ua;
+    }
+  };
+  script.src = APPS_SCRIPT_URL + '?action=config&callback=' + cbName + '&t=' + Date.now();
+  script.onerror = () => { clearTimeout(timer); delete window[cbName]; };
+  document.head.appendChild(script);
 }
 
 function init() {
@@ -1041,27 +1067,40 @@ function renderPresup() {
     const esL1 = item.lista === 1;
     const colorLista = esL1 ? 'var(--rojo)' : 'var(--azul)';
     const labelLista = esL1 ? 'L1' : 'L2';
+    const desc = item.descuento || 0;
+    const precioConDesc = item.precio * (1 - desc / 100);
+    const totalFila = precioConDesc * item.qty;
     return `
     <tr>
       <td><small>${item.codigo}</small></td>
-      <td style="font-size:.82rem;max-width:110px;">${item.descripcion}</td>
+      <td style="font-size:.82rem;max-width:90px;">${item.descripcion}</td>
       <td>
         <div class="qty-ctrl">
           <button class="qty-btn" onclick="changeQty(${idx},-1)">−</button>
-          <input class="qty-input" type="number" value="${item.qty}" min="0.001" step="0.001" onchange="setQty(${idx},this.value)">
+          <input class="qty-input" type="text" inputmode="decimal" value="${item.qty}" min="0.001" step="0.001"
+            onchange="setQty(${idx},this.value)" style="width:38px;">
           <button class="qty-btn" onclick="changeQty(${idx},1)">+</button>
         </div>
       </td>
       <td>
         <button onclick="toggleListaItem(${idx})" style="background:${colorLista};color:#fff;border:none;border-radius:5px;padding:2px 6px;font-size:.75rem;cursor:pointer;font-weight:700;display:block;margin-bottom:3px;">${labelLista}</button>
-        <span style="color:${colorLista};font-weight:700;">${fmt(item.precio)}</span>
+        <span style="color:${colorLista};font-weight:700;font-size:.78rem;">${fmt(item.precio)}</span>
       </td>
-      <td style="color:${colorLista};font-weight:700;">${fmt(item.precio * item.qty)}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:2px;">
+          <input type="text" inputmode="decimal" value="${desc > 0 ? desc : ''}" placeholder="0"
+            onchange="setDescuento(${idx},this.value)"
+            style="width:36px;border:1px solid var(--borde);border-radius:4px;padding:2px 4px;font-size:.78rem;text-align:center;background:var(--bg);">
+          <span style="font-size:.7rem;color:var(--gris);">%</span>
+        </div>
+        ${desc > 0 ? `<span style="font-size:.7rem;color:var(--acento);">${fmt(precioConDesc)}</span>` : ''}
+      </td>
+      <td style="color:${colorLista};font-weight:700;">${fmt(totalFila)}</td>
       <td><button class="del-btn" onclick="removeItem(${idx})">🗑</button></td>
     </tr>`;
   }).join('');
 
-  const total = presupItems.reduce((s,i)=>s+i.precio*i.qty,0);
+  const total = presupItems.reduce((s,i)=>s + i.precio*(1-(i.descuento||0)/100)*i.qty, 0);
   document.getElementById('totalPresup').textContent = fmt(total);
   document.getElementById('totalCardAmount').textContent = fmt(total);
   const items = presupItems.reduce((s,i)=>s+i.qty,0);
@@ -1081,8 +1120,13 @@ function changeQty(idx, delta) {
   renderPresup();
 }
 function setQty(idx, val) {
-  let parsed = parseFloat(val);
+  let parsed = parseFloat(String(val).replace(',', '.'));
   presupItems[idx].qty = (!isNaN(parsed) && parsed > 0) ? parsed : 1;
+  renderPresup();
+}
+function setDescuento(idx, val) {
+  let parsed = parseFloat(String(val).replace(',', '.'));
+  presupItems[idx].descuento = (!isNaN(parsed) && parsed >= 0 && parsed <= 100) ? parsed : 0;
   renderPresup();
 }
 function removeItem(idx) {
@@ -1093,7 +1137,8 @@ function limpiarPresupuesto() {
   if(confirm('¿Limpiar todo el presupuesto?')) {
     presupItems = [];
     incrementarNumero();
-    document.getElementById('pCliente').value = '';
+    document.getElementById('pCliente').value = 'Consumidor final';
+    document.getElementById('pVendedor').value = '';
     document.getElementById('pObs').value = '';
     renderPresup();
   }
@@ -1101,22 +1146,26 @@ function limpiarPresupuesto() {
 
 // ==================== EXPORT ====================
 function getPresupText() {
-  const cliente = document.getElementById('pCliente').value || 'Sin nombre';
-  const fechaRaw = document.getElementById('pFecha').value; // YYYY-MM-DD
+  const cliente  = document.getElementById('pCliente').value || 'Sin nombre';
+  const vendedor = document.getElementById('pVendedor').value || '';
+  const fechaRaw = document.getElementById('pFecha').value;
   const [yy, mm, dd] = fechaRaw.split('-');
   const fecha = `${dd}/${mm}/${yy}`;
   const num = document.getElementById('pNumero').value;
   const obs = document.getElementById('pObs').value;
-  const total = presupItems.reduce((s,i)=>s+i.precio*i.qty,0);
+  const total = presupItems.reduce((s,i)=>s + i.precio*(1-(i.descuento||0)/100)*i.qty, 0);
 
   let txt = `*MARIO MADERAS*\n`;
   txt += `Presupuesto N° ${num} - ${fecha}\n`;
   txt += `Cliente: ${cliente}\n`;
+  if(vendedor) txt += `Vendedor: ${vendedor}\n`;
   txt += `------------------\n`;
   presupItems.forEach(item => {
+    const precioConDesc = item.precio * (1 - (item.descuento||0)/100);
     txt += `\n`;
-    txt += `[${item.codigo}] ${item.descripcion}\n`;
-    txt += `  ${item.qty} x ${fmt(item.precio)} (${item.lista===1?'L1':'L2'}) = *${fmt(item.precio*item.qty)}*\n`;
+    txt += `[${item.codigo||'*'}] ${item.descripcion}\n`;
+    if(item.descuento > 0) txt += `  Desc: ${item.descuento}% → ${fmt(precioConDesc)}\n`;
+    txt += `  ${item.qty} x ${fmt(precioConDesc)} (${item.lista===1?'L1':'L2'}) = *${fmt(precioConDesc*item.qty)}*\n`;
   });
   txt += `\n------------------\n`;
   txt += `*TOTAL: ${fmt(total)}*\n`;
@@ -1142,58 +1191,92 @@ function compartirMail() {
   window.open(`mailto:${cliente}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(txt)}`, '_blank');
 }
 
+function _copiarYAbrir(txt, url, appNombre) {
+  function abrirApp() { window.open(url, '_blank'); }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt)
+      .then(() => {
+        abrirApp();
+        // Pequeño toast en vez de alert bloqueante
+        _mostrarToast('✅ Copiado. Pegalo en ' + appNombre);
+      })
+      .catch(() => {
+        // Fallback: textarea select
+        const ta = document.createElement('textarea');
+        ta.value = txt; ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); } catch(e){}
+        document.body.removeChild(ta);
+        abrirApp();
+        _mostrarToast('✅ Copiado. Pegalo en ' + appNombre);
+      });
+  } else {
+    // Sin API clipboard: seleccionar texto manual
+    const ta = document.createElement('textarea');
+    ta.value = txt; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch(e){}
+    document.body.removeChild(ta);
+    abrirApp();
+    _mostrarToast('✅ Copiado. Pegalo en ' + appNombre);
+  }
+}
+
+function _mostrarToast(msg) {
+  let t = document.getElementById('_toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = '_toast';
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:10px 20px;border-radius:20px;font-size:.88rem;z-index:9999;pointer-events:none;transition:opacity .3s;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+}
+
 function compartirInstagram() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
   autoGuardarDrive();
   const txt = getPresupText().replace(/\*/g,'').replace(/_/g,'');
-  // Instagram no tiene API de compartir web — copiamos al portapapeles y abrimos la app
-  if(navigator.clipboard) {
-    navigator.clipboard.writeText(txt).then(() => {
-      alert('✅ Presupuesto copiado al portapapeles.\n\nAbrí Instagram y pegalo en un mensaje directo.');
-      window.open('https://www.instagram.com/direct/inbox/', '_blank');
-    });
-  } else {
-    window.open('https://www.instagram.com/direct/inbox/', '_blank');
-  }
+  _copiarYAbrir(txt, 'https://www.instagram.com/direct/inbox/', 'Instagram');
 }
 
 function compartirMessenger() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
   autoGuardarDrive();
   const txt = getPresupText().replace(/\*/g,'').replace(/_/g,'');
-  // Messenger: copiar y abrir
-  if(navigator.clipboard) {
-    navigator.clipboard.writeText(txt).then(() => {
-      alert('✅ Presupuesto copiado al portapapeles.\n\nAbrí Messenger y pegalo en el chat.');
-      window.open('https://www.messenger.com/', '_blank');
-    });
-  } else {
-    window.open('https://www.messenger.com/', '_blank');
-  }
+  _copiarYAbrir(txt, 'https://www.messenger.com/', 'Messenger');
 }
 
 // ─── PDF LOCAL (IMPRIMIR / GUARDAR) ─────────────────────────
 function exportarPDF() {
   if (presupItems.length === 0) { alert('Agregá productos primero'); return; }
   autoGuardarDrive();
-  const cliente = document.getElementById('pCliente').value || 'Sin especificar';
+  const cliente  = document.getElementById('pCliente').value || 'Sin especificar';
+  const vendedor = document.getElementById('pVendedor').value || '';
   const fechaRaw = document.getElementById('pFecha').value;
   const [yy, mm, dd] = fechaRaw.split('-');
   const fecha = `${dd}/${mm}/${yy}`;
   const num   = document.getElementById('pNumero').value;
   const obs   = document.getElementById('pObs').value;
-  const total = presupItems.reduce((s, i) => s + i.precio * i.qty, 0);
+  const total = presupItems.reduce((s, i) => s + i.precio*(1-(i.descuento||0)/100) * i.qty, 0);
   const items = presupItems.reduce((s, i) => s + i.qty, 0);
 
-  const rows = presupItems.map((item, i) => `
+  const rows = presupItems.map((item, i) => {
+    const precioConDesc = item.precio * (1 - (item.descuento||0)/100);
+    return `
     <tr style="background:${i%2?'#f8f9ff':'#fff'}">
       <td style="padding:7px 10px;border-bottom:1px solid #eee;font-size:.82rem;">${item.codigo}</td>
       <td style="padding:7px 10px;border-bottom:1px solid #eee;font-size:.82rem;">${item.descripcion}</td>
       <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center;">${item.qty}</td>
       <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center;color:${(item.lista||2)===1?'#e03b3b':'#2222cc'};font-weight:700;">L${item.lista||2}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:right;">${fmt(item.precio)}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:right;font-weight:700;color:#2222cc;">${fmt(item.precio*item.qty)}</td>
-    </tr>`).join('');
+      <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center;color:#e03b3b;font-size:.78rem;">${(item.descuento||0)>0?'-'+item.descuento+'%':''}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:right;">${fmt(precioConDesc)}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:right;font-weight:700;color:#2222cc;">${fmt(precioConDesc*item.qty)}</td>
+    </tr>`;
+  }).join('');
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
   <style>
@@ -1222,7 +1305,7 @@ function exportarPDF() {
     ${obs?`<div class="info-box" style="grid-column:1/-1"><div class="info-label">Observaciones</div><div class="info-val" style="font-weight:400;font-size:.88rem;">${obs}</div></div>`:''}
   </div>
   <table>
-    <thead><tr><th>Código</th><th>Descripción</th><th style="text-align:center">Cant.</th><th style="text-align:center">Lista</th><th style="text-align:right">Unit.</th><th style="text-align:right">Total</th></tr></thead>
+    <thead><tr><th>Código</th><th>Descripción</th><th style="text-align:center">Cant.</th><th style="text-align:center">Lista</th><th style="text-align:center">Desc.</th><th style="text-align:right">Unit.</th><th style="text-align:right">Total</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
   <div class="total-box">
@@ -1255,17 +1338,20 @@ function autoGuardarDrive() {
 
 async function _ejecutarGuardarDrive(num) {
   const cliente  = document.getElementById('pCliente').value || 'Sin nombre';
+  const vendedor = document.getElementById('pVendedor').value || '';
   const fechaRaw = document.getElementById('pFecha').value;
   const [yy, mm, dd] = fechaRaw.split('-');
   const fecha    = `${dd}/${mm}/${yy}`;
   const obs      = document.getElementById('pObs').value;
-  const total    = presupItems.reduce((s, i) => s + i.precio * i.qty, 0);
+  const total    = presupItems.reduce((s, i) => s + i.precio*(1-(i.descuento||0)/100) * i.qty, 0);
   const itemsDetalle = presupItems.map(i => ({
     codigo: i.codigo || '—',
     descripcion: i.descripcion,
     qty: i.qty,
-    precio: i.precio,
-    total: i.precio * i.qty,
+    precio: i.precio * (1 - (i.descuento||0)/100),
+    precioOriginal: i.precio,
+    descuento: i.descuento || 0,
+    total: i.precio * (1-(i.descuento||0)/100) * i.qty,
     lista: i.lista || 2
   }));
   const resp = await fetch(APPS_SCRIPT_URL, {
@@ -1273,8 +1359,11 @@ async function _ejecutarGuardarDrive(num) {
     body: JSON.stringify({
       action: 'guardarPresupuesto',
       presupuesto: {
-        numero: num, fecha, cliente, obs, total,
-        items: presupItems.map(i => `[${i.codigo||'*'}] ${i.descripcion} x${i.qty} = ${fmt(i.precio*i.qty)}`).join(' | '),
+        numero: num, fecha, cliente, vendedor, obs, total,
+        items: presupItems.map(i => {
+          const p = i.precio*(1-(i.descuento||0)/100);
+          return `[${i.codigo||'*'}] ${i.descripcion} x${i.qty}${i.descuento>0?' -'+i.descuento+'%':''} = ${fmt(p*i.qty)}`;
+        }).join(' | '),
         itemsDetalle,
         guardarPDF: true,
         carpetaId: '1qMP6LnwbeuJll8LlaqbuE5W8LT3aZob1'
@@ -1284,6 +1373,13 @@ async function _ejecutarGuardarDrive(num) {
   const json = await resp.json();
   if (json.ok) {
     incrementarNumero();
+    // Limpiar pantalla después de procesar
+    presupItems = [];
+    document.getElementById('pCliente').value = 'Consumidor final';
+    document.getElementById('pVendedor').value = '';
+    document.getElementById('pObs').value = '';
+    renderPresup();
+    _mostrarToast('✅ Presupuesto N°' + num + ' guardado');
   }
 }
 
@@ -1324,20 +1420,23 @@ async function guardarEnDrive() {
   if (presupItems.length === 0) { alert('Agregá productos primero'); return; }
 
   const cliente  = document.getElementById('pCliente').value || 'Sin nombre';
+  const vendedor = document.getElementById('pVendedor').value || '';
   const fechaRaw = document.getElementById('pFecha').value;
   const [yy, mm, dd] = fechaRaw.split('-');
   const fecha    = `${dd}/${mm}/${yy}`;
   const num      = document.getElementById('pNumero').value;
   const obs      = document.getElementById('pObs').value;
-  const total    = presupItems.reduce((s, i) => s + i.precio * i.qty, 0);
+  const total    = presupItems.reduce((s, i) => s + i.precio*(1-(i.descuento||0)/100) * i.qty, 0);
 
   // Armar items con detalle completo para el PDF
   const itemsDetalle = presupItems.map(i => ({
     codigo: i.codigo,
     descripcion: i.descripcion,
     qty: i.qty,
-    precio: i.precio,
-    total: i.precio * i.qty,
+    precio: i.precio * (1-(i.descuento||0)/100),
+    precioOriginal: i.precio,
+    descuento: i.descuento || 0,
+    total: i.precio * (1-(i.descuento||0)/100) * i.qty,
     lista: i.lista || 2
   }));
 
@@ -1351,7 +1450,7 @@ async function guardarEnDrive() {
         action: 'guardarPresupuesto',
         presupuesto: {
           numero: num, fecha, cliente, obs, total,
-          items: presupItems.map(i => `[${i.codigo}] ${i.descripcion} x${i.qty} (${i.lista===1?'L1':'L2'}) = ${fmt(i.precio*i.qty)}`).join(' | '),
+          vendedor, items: presupItems.map(i => { const p=i.precio*(1-(i.descuento||0)/100); return `[${i.codigo||'*'}] ${i.descripcion} x${i.qty}${i.descuento>0?' -'+i.descuento+'%':''} = ${fmt(p*i.qty)}`; }).join(' | '),
           itemsDetalle,
           guardarPDF: true,
           carpetaId: '1qMP6LnwbeuJll8LlaqbuE5W8LT3aZob1'
