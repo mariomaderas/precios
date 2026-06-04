@@ -673,9 +673,8 @@ function parseCSVData(text) {
     products.push({ id: products.length, codigo, cod_fabrica, descripcion, precio_lista1: p1, precio_lista2: p2 });
   }
   allProducts = products;
-  const today = new Date();
-  document.getElementById('fechaActual').innerHTML = 'Actualizado: ' + today.toLocaleDateString('es-AR');
   init();
+  cargarUltimaActualizacion();
 }
 
 function parseCSVRow(line) {
@@ -731,8 +730,8 @@ async function loadStaticData() {
       precio_lista1: parseFloat(r[3])||0,
       precio_lista2: parseFloat(r[4])||0
     })).filter(p => p.descripcion);
-    document.getElementById('fechaActual').innerHTML = 'Actualizado: 01/06/2026';
     init();
+    cargarUltimaActualizacion();
   } catch(e) {
     console.error('Error descomprimiendo:', e);
     document.getElementById('productList').innerHTML = '<div class="no-results"><span class="emoji">⚠️</span>Error cargando datos. Recargá la página.</div>';
