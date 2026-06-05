@@ -1018,9 +1018,9 @@ async function obtenerUltimoNumero() {
       clearTimeout(timer);
       delete window[cbName];
       if(script.parentNode) script.parentNode.removeChild(script);
-      if (json.ok && json.ultimo_numero) {
-        const global = parseInt(json.ultimo_numero) + 1;
-        presupCounter = Math.max(global, parseInt(localStorage.getItem('mm_presup_num') || '1'));
+      if (json.ok && typeof json.ultimo_numero !== 'undefined') {
+        // Siempre usar el número del sheet + 1 (fuente de verdad compartida)
+        presupCounter = parseInt(json.ultimo_numero) + 1;
         localStorage.setItem('mm_presup_num', presupCounter);
         document.getElementById('pNumero').value = '7-' + String(presupCounter).padStart(4,'0');
       }
@@ -1231,6 +1231,7 @@ function _validarVendedor() {
 function copiarTexto() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
   if(!_validarVendedor()) return;
+  autoGuardarDrive();
   const txt = getPresupText().replace(/\*/g,'').replace(/_/g,'');
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(txt)
