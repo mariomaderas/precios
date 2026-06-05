@@ -1003,7 +1003,7 @@ function setPresupCounter() {
   // Mostrar número local mientras carga el global
   const local = parseInt(localStorage.getItem('mm_presup_num') || '1');
   presupCounter = local;
-  document.getElementById('pNumero').value = '7-' + String(presupCounter).padStart(4,'0');
+  document.getElementById('pNumero').value = 'P007-' + String(presupCounter).padStart(6,'0');
   // Consultar el último número al Apps Script (compartido entre dispositivos)
   obtenerUltimoNumero();
 }
@@ -1020,11 +1020,11 @@ async function obtenerUltimoNumero() {
       if(script.parentNode) script.parentNode.removeChild(script);
       if (json.ok && typeof json.ultimo_numero !== 'undefined') {
         // Stripear prefijo "7-" si viene del sheet, luego +1
-        const raw = String(json.ultimo_numero).replace(/^7-/i,'').trim();
+        const raw = String(json.ultimo_numero).replace(/^P007-/,'').trim();
         presupCounter = parseInt(raw) + 1;
         if (isNaN(presupCounter) || presupCounter < 1) presupCounter = 1;
         localStorage.setItem('mm_presup_num', presupCounter);
-        document.getElementById('pNumero').value = '7-' + String(presupCounter).padStart(4,'0');
+        document.getElementById('pNumero').value = 'P007-' + String(presupCounter).padStart(6,'0');
       }
     };
     script.src = APPS_SCRIPT_URL + '?action=ultimoPresupuesto&callback=' + cbName + '&t=' + Date.now();
@@ -1036,7 +1036,7 @@ async function obtenerUltimoNumero() {
 function incrementarNumero() {
   presupCounter++;
   localStorage.setItem('mm_presup_num', presupCounter);
-  document.getElementById('pNumero').value = '7-' + String(presupCounter).padStart(4,'0');
+  document.getElementById('pNumero').value = 'P007-' + String(presupCounter).padStart(6,'0');
 }
 
 function addToPresup(id) {
@@ -1470,11 +1470,11 @@ async function _ejecutarGuardarDrive(num) {
   if (json.ok) {
     // Usar número real asignado por el servidor
     const numReal = json.numero || num;
-    const numInt = parseInt(String(numReal).replace(/^[A-Za-z0-9]+-/,'').trim());
+    const numInt = parseInt(String(numReal).replace(/^P007-/,'').trim());
     if (!isNaN(numInt)) {
       presupCounter = numInt + 1;
       localStorage.setItem('mm_presup_num', presupCounter);
-      document.getElementById('pNumero').value = '7-' + String(presupCounter).padStart(4,'0');
+      document.getElementById('pNumero').value = 'P007-' + String(presupCounter).padStart(6,'0');
     } else {
       incrementarNumero();
     }
