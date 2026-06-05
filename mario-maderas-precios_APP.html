@@ -1468,14 +1468,23 @@ async function _ejecutarGuardarDrive(num) {
   });
   const json = await resp.json();
   if (json.ok) {
-    incrementarNumero();
+    // Usar número real asignado por el servidor
+    const numReal = json.numero || num;
+    const numInt = parseInt(String(numReal).replace(/^[A-Za-z0-9]+-/,'').trim());
+    if (!isNaN(numInt)) {
+      presupCounter = numInt + 1;
+      localStorage.setItem('mm_presup_num', presupCounter);
+      document.getElementById('pNumero').value = '7-' + String(presupCounter).padStart(4,'0');
+    } else {
+      incrementarNumero();
+    }
     // Limpiar pantalla después de procesar
     presupItems = [];
     document.getElementById('pCliente').value = 'Consumidor final';
     document.getElementById('pVendedor').value = '';
     document.getElementById('pObs').value = '';
     renderPresup();
-    _mostrarToast('✅ Presupuesto N°' + num + ' guardado');
+    _mostrarToast('✅ Presupuesto N°' + numReal + ' guardado');
   }
 }
 
