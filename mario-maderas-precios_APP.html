@@ -244,6 +244,7 @@
   .btn-instagram { background: linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); color: #fff; }
   .btn-messenger { background: #0084FF; color: #fff; }
   .btn-clear { background: var(--bg); color: var(--gris); border: 1.5px solid var(--borde); }
+  .btn-copiar { background: #6c5ce7; color: #fff; }
   .btn-whatsapp:active, .btn-pdf:active, .btn-mail:active { opacity: .85; transform: scale(.98); }
 
   /* EMPTY STATE */
@@ -511,6 +512,7 @@
       <button class="action-btn btn-mail" onclick="compartirMail()">📧 Email</button>
       <button class="action-btn btn-pdf" onclick="exportarPDF()">📄 PDF</button>
       <button class="action-btn btn-drive" onclick="guardarEnDrive()">☁️ Drive</button>
+      <button class="action-btn btn-copiar" style="grid-column:1/-1;" onclick="copiarTexto()">📋 Copiar texto</button>
       <button class="action-btn btn-clear" style="grid-column:1/-1;" onclick="limpiarPresupuesto()">🗑️ Limpiar presupuesto</button>
     </div>
   </div>
@@ -1224,6 +1226,31 @@ function _validarVendedor() {
     return false;
   }
   return true;
+}
+
+function copiarTexto() {
+  if(presupItems.length===0){alert('Agregá productos primero');return;}
+  if(!_validarVendedor()) return;
+  const txt = getPresupText().replace(/\*/g,'').replace(/_/g,'');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt)
+      .then(() => _mostrarToast('📋 Texto copiado — pegalo donde quieras'))
+      .catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = txt; ta.style.cssText = 'position:fixed;opacity:0;';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); } catch(e){}
+        document.body.removeChild(ta);
+        _mostrarToast('📋 Texto copiado — pegalo donde quieras');
+      });
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = txt; ta.style.cssText = 'position:fixed;opacity:0;';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch(e){}
+    document.body.removeChild(ta);
+    _mostrarToast('📋 Texto copiado — pegalo donde quieras');
+  }
 }
 
 function compartirWhatsapp() {
