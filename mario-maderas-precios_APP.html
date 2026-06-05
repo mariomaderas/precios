@@ -1001,7 +1001,7 @@ function setPresupCounter() {
   // Mostrar número local mientras carga el global
   const local = parseInt(localStorage.getItem('mm_presup_num') || '1');
   presupCounter = local;
-  document.getElementById('pNumero').value = String(presupCounter).padStart(4,'0');
+  document.getElementById('pNumero').value = '7-' + String(presupCounter).padStart(4,'0');
   // Consultar el último número al Apps Script (compartido entre dispositivos)
   obtenerUltimoNumero();
 }
@@ -1020,7 +1020,7 @@ async function obtenerUltimoNumero() {
         const global = parseInt(json.ultimo_numero) + 1;
         presupCounter = Math.max(global, parseInt(localStorage.getItem('mm_presup_num') || '1'));
         localStorage.setItem('mm_presup_num', presupCounter);
-        document.getElementById('pNumero').value = String(presupCounter).padStart(4,'0');
+        document.getElementById('pNumero').value = '7-' + String(presupCounter).padStart(4,'0');
       }
     };
     script.src = APPS_SCRIPT_URL + '?action=ultimoPresupuesto&callback=' + cbName + '&t=' + Date.now();
@@ -1032,7 +1032,7 @@ async function obtenerUltimoNumero() {
 function incrementarNumero() {
   presupCounter++;
   localStorage.setItem('mm_presup_num', presupCounter);
-  document.getElementById('pNumero').value = String(presupCounter).padStart(4,'0');
+  document.getElementById('pNumero').value = '7-' + String(presupCounter).padStart(4,'0');
 }
 
 function addToPresup(id) {
@@ -1121,6 +1121,7 @@ function renderPresup() {
       <td>
         <button onclick="toggleListaItem(${idx})" style="background:${colorLista};color:#fff;border:none;border-radius:5px;padding:2px 6px;font-size:.75rem;cursor:pointer;font-weight:700;display:block;margin-bottom:3px;">${labelLista}</button>
         <span style="color:${colorLista};font-weight:700;font-size:.78rem;">${fmt(item.precio)}</span>
+        ${desc > 0 ? `<br><span style="font-size:.72rem;color:var(--acento);font-weight:700;">${fmt(precioConDesc)}</span>` : ''}
       </td>
       <td>
         <div style="display:flex;align-items:center;gap:2px;">
@@ -1129,7 +1130,6 @@ function renderPresup() {
             style="width:36px;border:1px solid var(--borde);border-radius:4px;padding:2px 4px;font-size:.78rem;text-align:center;background:var(--bg);">
           <span style="font-size:.7rem;color:var(--gris);">%</span>
         </div>
-        ${desc > 0 ? `<span style="font-size:.7rem;color:var(--acento);">${fmt(precioConDesc)}</span>` : ''}
       </td>
       <td style="color:${colorLista};font-weight:700;">${fmt(totalFila)}</td>
       <td><button class="del-btn" onclick="removeItem(${idx})">🗑</button></td>
@@ -1200,8 +1200,12 @@ function getPresupText() {
     const precioConDesc = item.precio * (1 - (item.descuento||0)/100);
     txt += `\n`;
     txt += `[${item.codigo||'*'}] ${item.descripcion}\n`;
-    if(item.descuento > 0) txt += `  Desc: ${item.descuento}% → ${fmt(precioConDesc)}\n`;
-    txt += `  ${item.qty} x ${fmt(precioConDesc)} (${item.lista===1?'L1':'L2'}) = *${fmt(precioConDesc*item.qty)}*\n`;
+    if(item.descuento > 0) {
+      txt += `  Precio: ${fmt(item.precio)} → Desc. ${item.descuento}% → *${fmt(precioConDesc)}*\n`;
+      txt += `  ${item.qty} x ${fmt(precioConDesc)} = *${fmt(precioConDesc*item.qty)}*\n`;
+    } else {
+      txt += `  ${item.qty} x ${fmt(item.precio)} (${item.lista===1?'L1':'L2'}) = *${fmt(item.precio*item.qty)}*\n`;
+    }
   });
   txt += `\n------------------\n`;
   txt += `*TOTAL: ${fmt(total)}*\n`;
@@ -1332,7 +1336,10 @@ function exportarPDF() {
       <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center;">${item.qty}</td>
       <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center;font-weight:700;">L${item.lista||2}</td>
       <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center;color:#e03b3b;font-size:.78rem;">${(item.descuento||0)>0?'-'+item.descuento+'%':''}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:right;">${fmt(precioConDesc)}</td>
+      <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:right;">
+        ${(item.descuento||0)>0?`<span style="text-decoration:line-through;color:#999;font-size:.78rem;">${fmt(item.precio)}</span><br>`:'' }
+        <span style="font-weight:700;">${fmt(precioConDesc)}</span>
+      </td>
       <td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:right;font-weight:700;color:#2222cc;">${fmt(precioConDesc*item.qty)}</td>
     </tr>`;
   }).join('');
