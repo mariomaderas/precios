@@ -1019,8 +1019,10 @@ async function obtenerUltimoNumero() {
       delete window[cbName];
       if(script.parentNode) script.parentNode.removeChild(script);
       if (json.ok && typeof json.ultimo_numero !== 'undefined') {
-        // Siempre usar el número del sheet + 1 (fuente de verdad compartida)
-        presupCounter = parseInt(json.ultimo_numero) + 1;
+        // Stripear prefijo "7-" si viene del sheet, luego +1
+        const raw = String(json.ultimo_numero).replace(/^7-/i,'').trim();
+        presupCounter = parseInt(raw) + 1;
+        if (isNaN(presupCounter) || presupCounter < 1) presupCounter = 1;
         localStorage.setItem('mm_presup_num', presupCounter);
         document.getElementById('pNumero').value = '7-' + String(presupCounter).padStart(4,'0');
       }
@@ -1228,30 +1230,29 @@ function _validarVendedor() {
   return true;
 }
 
-function copiarTexto() {
+async function copiarTexto() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
   if(!_validarVendedor()) return;
-  autoGuardarDrive();
   const txt = getPresupText().replace(/\*/g,'').replace(/_/g,'');
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(txt)
-      .then(() => _mostrarToast('📋 Texto copiado — pegalo donde quieras'))
-      .catch(() => {
-        const ta = document.createElement('textarea');
-        ta.value = txt; ta.style.cssText = 'position:fixed;opacity:0;';
-        document.body.appendChild(ta); ta.select();
-        try { document.execCommand('copy'); } catch(e){}
-        document.body.removeChild(ta);
-        _mostrarToast('📋 Texto copiado — pegalo donde quieras');
-      });
-  } else {
-    const ta = document.createElement('textarea');
-    ta.value = txt; ta.style.cssText = 'position:fixed;opacity:0;';
-    document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); } catch(e){}
-    document.body.removeChild(ta);
-    _mostrarToast('📋 Texto copiado — pegalo donde quieras');
+  // Copiar primero (antes de que la pantalla se limpie)
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(txt);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = txt; ta.style.cssText = 'position:fixed;opacity:0;';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e){}
+      document.body.removeChild(ta);
+    }
+  } catch(e) {}
+  // Guardar en Drive (igual que los otros botones)
+  const num = document.getElementById('pNumero').value;
+  if (_ultimoNumeroGuardado !== num) {
+    _ultimoNumeroGuardado = num;
+    try { await _ejecutarGuardarDrive(num); } catch(e) { console.warn('copiarTexto save:', e.message); }
   }
+  _mostrarToast('📋 Texto copiado y presupuesto guardado');
 }
 
 function compartirWhatsapp() {
