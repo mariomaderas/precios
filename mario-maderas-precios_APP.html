@@ -1461,7 +1461,8 @@ async function _ejecutarGuardarDrive(num) {
         }).join(' | '),
         itemsDetalle,
         guardarPDF: true,
-        carpetaId: '1qMP6LnwbeuJll8LlaqbuE5W8LT3aZob1'
+        carpetaId: '1qMP6LnwbeuJll8LlaqbuE5W8LT3aZob1',
+        logoBase64: (function(){ try { return localStorage.getItem('mm_logo') || ''; } catch(e){ return ''; } })()
       }
     })
   });
@@ -1550,7 +1551,8 @@ async function guardarEnDrive() {
           itemsDetalle,
           guardarPDF: true,
           carpetaId: '1qMP6LnwbeuJll8LlaqbuE5W8LT3aZob1'
-        }
+     ,
+        logoBase64: (function(){ try { return localStorage.getItem('mm_logo') || ''; } catch(e){ return ''; } })()   }
       })
     });
     const json = await resp.json();
