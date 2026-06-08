@@ -1019,12 +1019,17 @@ async function obtenerUltimoNumero() {
       delete window[cbName];
       if(script.parentNode) script.parentNode.removeChild(script);
       if (json.ok && typeof json.ultimo_numero !== 'undefined') {
-        // Stripear prefijo "7-" si viene del sheet, luego +1
-        const raw = String(json.ultimo_numero).replace(/^P007-/,'').trim();
-        presupCounter = parseInt(raw) + 1;
-        if (isNaN(presupCounter) || presupCounter < 1) presupCounter = 1;
-        localStorage.setItem('mm_presup_num', presupCounter);
-        document.getElementById('pNumero').value = 'P007-' + String(presupCounter).padStart(6,'0');
+        // Extraer dígitos al final del valor: maneja int (94), "P007-000094" y "7-2005"
+        const raw = String(json.ultimo_numero).trim();
+        const m = raw.match(/(\d+)$/);
+        if (m) {
+          const n = parseInt(m[1]);
+          if (!isNaN(n) && n >= 0) {
+            presupCounter = n + 1;
+            localStorage.setItem('mm_presup_num', presupCounter);
+            document.getElementById('pNumero').value = 'P007-' + String(presupCounter).padStart(6,'0');
+          }
+        }
       }
     };
     script.src = APPS_SCRIPT_URL + '?action=ultimoPresupuesto&callback=' + cbName + '&t=' + Date.now();
@@ -1255,22 +1260,24 @@ async function copiarTexto() {
   _mostrarToast('📋 Texto copiado y presupuesto guardado');
 }
 
-function compartirWhatsapp() {
+async function compartirWhatsapp() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
   if(!_validarVendedor()) return;
-  autoGuardarDrive();
-  const txt = getPresupText();
+  _mostrarToast('⏳ Guardando presupuesto...');
+  const txt = getPresupText(); // capturar ANTES de que save limpie los items
+  await autoGuardarDrive();
   window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank');
 }
 
-function compartirMail() {
+async function compartirMail() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
   if(!_validarVendedor()) return;
-  autoGuardarDrive();
+  _mostrarToast('⏳ Guardando presupuesto...');
+  const txt = getPresupText().replace(/\*/g,'').replace(/_/g,''); // capturar ANTES
   const cliente = document.getElementById('pCliente').value || '';
   const num = document.getElementById('pNumero').value;
-  const txt = getPresupText().replace(/\*/g,'').replace(/_/g,'');
   const subject = `Presupuesto N° ${num} — Mario Maderas`;
+  await autoGuardarDrive();
   window.open(`mailto:${cliente}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(txt)}`, '_blank');
 }
 
@@ -1319,19 +1326,21 @@ function _mostrarToast(msg) {
   t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
 }
 
-function compartirInstagram() {
+async function compartirInstagram() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
   if(!_validarVendedor()) return;
-  autoGuardarDrive();
-  const txt = getPresupText().replace(/\*/g,'').replace(/_/g,'');
+  _mostrarToast('⏳ Guardando presupuesto...');
+  const txt = getPresupText().replace(/\*/g,'').replace(/_/g,''); // capturar ANTES
+  await autoGuardarDrive();
   _copiarYAbrir(txt, 'https://www.instagram.com/direct/inbox/', 'Instagram');
 }
 
-function compartirMessenger() {
+async function compartirMessenger() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
   if(!_validarVendedor()) return;
-  autoGuardarDrive();
-  const txt = getPresupText().replace(/\*/g,'').replace(/_/g,'');
+  _mostrarToast('⏳ Guardando presupuesto...');
+  const txt = getPresupText().replace(/\*/g,'').replace(/_/g,''); // capturar ANTES
+  await autoGuardarDrive();
   _copiarYAbrir(txt, 'https://www.messenger.com/', 'Messenger');
 }
 
@@ -1425,10 +1434,9 @@ let _ultimoNumeroGuardado = null;
 
 function autoGuardarDrive() {
   const num = document.getElementById('pNumero').value;
-  if (_ultimoNumeroGuardado === num) return; // ya guardado este número
+  if (_ultimoNumeroGuardado === num) return Promise.resolve();
   _ultimoNumeroGuardado = num;
-  // Guardar en segundo plano (fire & forget)
-  _ejecutarGuardarDrive(num).catch(e => console.warn('autoGuardar:', e.message));
+  return _ejecutarGuardarDrive(num).catch(e => { console.warn('autoGuardar:', e.message); });
 }
 
 async function _ejecutarGuardarDrive(num) {
@@ -1470,11 +1478,17 @@ async function _ejecutarGuardarDrive(num) {
   if (json.ok) {
     // Usar número real asignado por el servidor
     const numReal = json.numero || num;
-    const numInt = parseInt(String(numReal).replace(/^P007-/,'').trim());
-    if (!isNaN(numInt)) {
-      presupCounter = numInt + 1;
-      localStorage.setItem('mm_presup_num', presupCounter);
-      document.getElementById('pNumero').value = 'P007-' + String(presupCounter).padStart(6,'0');
+    // Extraer número después del último guion: P007-NNNNNN o 7-NNNN
+    const mNum = String(numReal).trim().match(/-(\d+)$/);
+    if (mNum) {
+      const numInt = parseInt(mNum[1]);
+      if (!isNaN(numInt) && numInt > 0) {
+        presupCounter = numInt + 1;
+        localStorage.setItem('mm_presup_num', presupCounter);
+        document.getElementById('pNumero').value = 'P007-' + String(presupCounter).padStart(6,'0');
+      } else {
+        incrementarNumero();
+      }
     } else {
       incrementarNumero();
     }
