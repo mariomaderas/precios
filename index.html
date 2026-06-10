@@ -101,7 +101,8 @@
   /* CARRUSEL BANNERS */
   .banner-carousel { width:100%; overflow:hidden; border-radius:12px; }
   .banner-track { display:flex; transition:transform 0.4s ease; }
-  .banner-track img { width:100%; flex-shrink:0; object-fit:cover; border-radius:12px; max-height:200px; display:block; }
+  .banner-track > a, .banner-track > img { width:100%; flex-shrink:0; }
+  .banner-track img { width:100%; object-fit:cover; border-radius:12px; max-height:200px; display:block; }
   .banner-dots { display:flex; justify-content:center; gap:7px; margin-top:8px; }
   .banner-dot { width:8px; height:8px; border-radius:50%; background:rgba(34,34,204,0.2); cursor:pointer; transition:background 0.2s; }
   .banner-dot.active { background:#2222CC; }
