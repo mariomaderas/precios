@@ -1345,10 +1345,10 @@ async function compartirMessenger() {
 }
 
 // ─── PDF LOCAL (IMPRIMIR / GUARDAR) ─────────────────────────
-function exportarPDF() {
+async function exportarPDF() {
   if (presupItems.length === 0) { alert('Agregá productos primero'); return; }
   if(!_validarVendedor()) return;
-  autoGuardarDrive();
+  await autoGuardarDrive();
   const cliente  = document.getElementById('pCliente').value || 'Sin especificar';
   const vendedor = document.getElementById('pVendedor').value || '';
   const fechaRaw = document.getElementById('pFecha').value;
@@ -1405,7 +1405,7 @@ function exportarPDF() {
   </div>
   <div class="info-grid">
     <div class="info-box"><div class="info-label">Cliente</div><div class="info-val">${cliente}</div></div>
-    <div class="info-box"><div class="info-label">Total artículos</div><div class="info-val">${items} unidad${items!==1?'es':''}</div></div>
+    ${vendedor ? `<div class="info-box"><div class="info-label">Vendedor</div><div class="info-val">${vendedor}</div></div>` : `<div class="info-box"><div class="info-label">Total artículos</div><div class="info-val">${items} unidad${items!==1?'es':''}</div></div>`}
     ${obs?`<div class="info-box" style="grid-column:1/-1"><div class="info-label">Observaciones</div><div class="info-val" style="font-weight:400;font-size:.88rem;">${obs}</div></div>`:''}
   </div>
   <table>
