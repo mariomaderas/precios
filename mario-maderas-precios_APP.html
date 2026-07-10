@@ -559,6 +559,7 @@
       <button class="action-btn btn-pdf" onclick="exportarPDF()">📄 PDF</button>
       <button class="action-btn btn-drive" onclick="guardarEnDrive()">☁️ Drive</button>
       <button class="action-btn btn-copiar" style="grid-column:1/-1;" onclick="copiarTexto()">📋 Copiar texto</button>
+      <button class="action-btn" style="grid-column:1/-1;background:var(--acento);color:#fff;" onclick="exportarJSONPedidos()">📤 Exportar JSON (Sistema de pedidos)</button>
       <button class="action-btn btn-clear" style="grid-column:1/-1;" onclick="limpiarPresupuesto()">🗑️ Limpiar presupuesto</button>
     </div>
   </div>
@@ -576,6 +577,21 @@
   </div>
 </div>
 
+<!-- MODAL EXPORTAR JSON (Sistema de pedidos) -->
+<div class="overlay" id="jsonOverlay" onclick="cerrarModalJSON(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="cerrarModalJSON()">✕</button>
+    <h3>📤 JSON para el Sistema de pedidos</h3>
+    <p style="font-size:.82rem;color:var(--gris);margin-bottom:10px;">Copiá este texto y pegalo en "Importar del Optimizador (JSON)", o descargá el archivo.</p>
+    <textarea id="jsonTextarea" readonly onclick="this.select()"
+      style="width:100%;height:260px;border:1.5px solid var(--borde);border-radius:10px;padding:10px;font-family:monospace;font-size:.78rem;background:var(--bg);color:var(--texto);resize:vertical;"></textarea>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="modal-add-btn" style="flex:1;margin-top:0;" onclick="copiarJSONPedidos()">📋 Copiar</button>
+      <button class="modal-add-btn" style="flex:1;margin-top:0;background:var(--bg);color:var(--azul);border:1.5px solid var(--borde);" onclick="descargarJSONPedidos()">💾 Descargar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ==================== DATOS ====================
 let allProducts = [];
@@ -588,7 +604,7 @@ let selectedFabricaFilter = '';
 let modalProduct = null;
 let presupCounter = 1;
 let listaActiva = 2;
-let piezasFilas = [{ cant: '', ancho: '', alto: '' }];
+let piezasFilas = [{ cant: '', largo: '', ancho: '' }];
 let piezasProducto = null; // { id, codigo, descripcion, precio_m2 }
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfxv4fw15ouak9MSPY-0GXV9SxovhO4z-_SFq3fCRR93CRPsjer1rUtu0iwpfMOZ9xEg/exec'; // Por defecto Lista 2
 
@@ -1605,25 +1621,25 @@ function toNum(v) {
 }
 
 function areaFila(f) {
-  return toNum(f.ancho) * toNum(f.alto);
+  return toNum(f.largo) * toNum(f.ancho);
 }
 
 function renderPiezasFilas() {
   const wrap = document.getElementById('piezasFilasWrap');
   wrap.innerHTML = `
     <div style="display:grid;grid-template-columns:44px 1fr 1fr 1fr 1fr 30px;gap:6px;font-size:.68rem;color:var(--gris);text-transform:uppercase;letter-spacing:.3px;font-weight:600;margin-bottom:4px;">
-      <div>Cant.</div><div>Ancho(m)</div><div>Alto(m)</div><div>Unit.</div><div>Total</div><div></div>
+      <div>Cant.</div><div>Largo(m)</div><div>Ancho(m)</div><div>Unit.</div><div>Total</div><div></div>
     </div>
   ` + piezasFilas.map((f, idx) => `
     <div style="display:grid;grid-template-columns:44px 1fr 1fr 1fr 1fr 30px;gap:6px;align-items:center;margin-bottom:6px;">
       <input type="text" inputmode="decimal" id="piezaCant_${idx}" placeholder="0" value="${f.cant}"
         oninput="actualizarFilaPieza(${idx},'cant',this.value)" onkeydown="piezaEnter(event,${idx},'cant')"
         style="width:100%;border:1.5px solid var(--borde);border-radius:6px;padding:6px 4px;font-size:.82rem;text-align:center;background:var(--bg);">
+      <input type="text" inputmode="decimal" id="piezaLargo_${idx}" placeholder="0.00" value="${f.largo}"
+        oninput="actualizarFilaPieza(${idx},'largo',this.value)" onkeydown="piezaEnter(event,${idx},'largo')"
+        style="width:100%;border:1.5px solid var(--borde);border-radius:6px;padding:6px 4px;font-size:.82rem;text-align:center;background:var(--bg);">
       <input type="text" inputmode="decimal" id="piezaAncho_${idx}" placeholder="0.00" value="${f.ancho}"
         oninput="actualizarFilaPieza(${idx},'ancho',this.value)" onkeydown="piezaEnter(event,${idx},'ancho')"
-        style="width:100%;border:1.5px solid var(--borde);border-radius:6px;padding:6px 4px;font-size:.82rem;text-align:center;background:var(--bg);">
-      <input type="text" inputmode="decimal" id="piezaAlto_${idx}" placeholder="0.00" value="${f.alto}"
-        oninput="actualizarFilaPieza(${idx},'alto',this.value)" onkeydown="piezaEnter(event,${idx},'alto')"
         style="width:100%;border:1.5px solid var(--borde);border-radius:6px;padding:6px 4px;font-size:.82rem;text-align:center;background:var(--bg);">
       <div id="piezaUnit_${idx}" style="font-size:.78rem;font-weight:600;color:var(--texto);">—</div>
       <div id="piezaTotal_${idx}" style="font-size:.78rem;font-weight:700;color:var(--azul);">—</div>
@@ -1633,20 +1649,20 @@ function renderPiezasFilas() {
   refrescarCalculosPiezas();
 }
 
-// Navegación con Enter: cant → ancho → alto → cant de la fila siguiente.
+// Navegación con Enter: cant → largo → ancho → cant de la fila siguiente.
 // Si es el último campo de la última fila, agrega una fila nueva y enfoca su primer casillero.
 function piezaEnter(ev, idx, campo) {
   if (ev.key !== 'Enter') return;
   ev.preventDefault();
-  const orden = ['cant', 'ancho', 'alto'];
+  const orden = ['cant', 'largo', 'ancho'];
   const pos = orden.indexOf(campo);
   if (pos < orden.length - 1) {
-    const siguienteId = { cant: 'piezaAncho_', ancho: 'piezaAlto_', alto: '' }[campo] + idx;
+    const siguienteId = { cant: 'piezaLargo_', largo: 'piezaAncho_' }[campo] + idx;
     const el = document.getElementById(siguienteId);
     if (el) { el.focus(); el.select(); }
     return;
   }
-  // Estábamos en "alto"
+  // Estábamos en "ancho" (último campo de la fila)
   if (idx < piezasFilas.length - 1) {
     const el = document.getElementById(`piezaCant_${idx + 1}`);
     if (el) { el.focus(); el.select(); }
@@ -1681,13 +1697,13 @@ function refrescarCalculosPiezas() {
 }
 
 function agregarFilaPieza() {
-  piezasFilas.push({ cant: '', ancho: '', alto: '' });
+  piezasFilas.push({ cant: '', largo: '', ancho: '' });
   renderPiezasFilas();
 }
 
 function eliminarFilaPieza(idx) {
   piezasFilas.splice(idx, 1);
-  if (piezasFilas.length === 0) piezasFilas.push({ cant: '', ancho: '', alto: '' });
+  if (piezasFilas.length === 0) piezasFilas.push({ cant: '', largo: '', ancho: '' });
   renderPiezasFilas();
 }
 
@@ -1754,8 +1770,8 @@ function agregarPiezasAlPresupuesto() {
   filasValidas.forEach((f, i) => {
     const area = areaFila(f);
     const cant = toNum(f.cant);
-    const a = toNum(f.ancho);
-    const h = toNum(f.alto);
+    const a = toNum(f.largo);
+    const h = toNum(f.ancho);
     const precio_lista1 = area * piezasProducto.precio_lista1;
     const precio_lista2 = area * piezasProducto.precio_lista2;
     presupItems.push({
@@ -1768,19 +1784,81 @@ function agregarPiezasAlPresupuesto() {
       precio: precio_lista2,
       qty: cant,
       descuento: 0,
-      esPieza: true
+      esPieza: true,
+      piezaLargo: a,
+      piezaAncho: h,
+      piezaProducto: piezasProducto.descripcion
     });
   });
   renderPresup();
 }
 
 function limpiarPiezas() {
-  piezasFilas = [{ cant: '', ancho: '', alto: '' }];
+  piezasFilas = [{ cant: '', largo: '', ancho: '' }];
   piezasProducto = null;
   document.getElementById('piezasProductoSel').style.display = 'none';
   document.getElementById('piezasSearch').value = '';
   document.getElementById('piezasResults').innerHTML = '';
   renderPiezasFilas();
+}
+
+// ==================== EXPORTAR JSON — SISTEMA DE PEDIDOS ====================
+function construirJSONPedidos() {
+  const piezas = presupItems.filter(i => i.esPieza);
+  return {
+    origen: 'Mario Maderas - App de precios',
+    generado: new Date().toISOString(),
+    unidad: 'mt',
+    renglones: piezas.map(i => ({
+      cantidad: i.qty,
+      codigo: i.codigo || '',
+      descripcion: i.piezaProducto || i.descripcion,
+      largo_mt: i.piezaLargo,
+      ancho_mt: i.piezaAncho,
+      producto: i.piezaProducto || i.descripcion,
+      cantos: { sup: false, inf: false, izq: false, der: false }
+    }))
+  };
+}
+
+function exportarJSONPedidos() {
+  const piezas = presupItems.filter(i => i.esPieza);
+  if (piezas.length === 0) { alert('No hay piezas cargadas (usá la Calculadora de piezas y agregalas al presupuesto primero)'); return; }
+  const json = construirJSONPedidos();
+  document.getElementById('jsonTextarea').value = JSON.stringify(json, null, 2);
+  document.getElementById('jsonOverlay').classList.add('open');
+}
+
+function cerrarModalJSON(e) {
+  if (!e || e.target.id === 'jsonOverlay' || e.target.classList.contains('modal-close')) {
+    document.getElementById('jsonOverlay').classList.remove('open');
+  }
+}
+
+async function copiarJSONPedidos() {
+  const texto = document.getElementById('jsonTextarea').value;
+  try {
+    await navigator.clipboard.writeText(texto);
+    alert('✅ JSON copiado al portapapeles');
+  } catch (e) {
+    const ta = document.getElementById('jsonTextarea');
+    ta.select();
+    document.execCommand('copy');
+    alert('✅ JSON copiado al portapapeles');
+  }
+}
+
+function descargarJSONPedidos() {
+  const texto = document.getElementById('jsonTextarea').value;
+  const blob = new Blob([texto], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'lista_para_pedidos_' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ─── GUARDAR EN DRIVE VIA APPS SCRIPT ──────────────────────
