@@ -439,6 +439,52 @@
       <div class="presup-result-list" id="presupResults"></div>
     </div>
 
+    <!-- Calculadora de piezas -->
+    <div class="presup-search" style="background:#e4e8fa;border:1.5px solid var(--azul);border-left:5px solid var(--azul);">
+      <h3 style="cursor:pointer;" onclick="togglePiezas()">📐 Calculadora de piezas <span id="piezasArrow" style="font-size:.8rem;opacity:.6;">▼</span></h3>
+      <div id="piezasForm" style="display:none;margin-top:8px;">
+
+        <div id="piezasFilasWrap"></div>
+        <button onclick="agregarFilaPieza()" style="background:var(--bg);color:var(--azul);border:1.5px solid var(--borde);border-radius:8px;padding:7px 14px;font-family:'Barlow Condensed',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;margin-top:4px;">
+          + Agregar fila
+        </button>
+
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--borde);">
+          <label style="font-size:.72rem;color:var(--gris);text-transform:uppercase;letter-spacing:.5px;font-weight:600;display:block;margin-bottom:4px;">Producto (precio por m² — Lista 2)</label>
+          <div class="search-bar" style="margin-bottom:0;">
+            <span class="ico">🔍</span>
+            <input type="text" id="piezasSearch" placeholder="Buscar producto por nombre o código..." oninput="buscarProductoPiezas()" autocomplete="off">
+            <button class="clear-btn" onclick="clearSearch('piezasSearch')">✕</button>
+          </div>
+          <div class="presup-result-list" id="piezasResults"></div>
+          <div id="piezasProductoSel" style="display:none;margin-top:8px;background:var(--bg);border-radius:10px;padding:10px 12px;align-items:center;justify-content:space-between;gap:8px;">
+            <div>
+              <div style="font-size:.85rem;font-weight:700;" id="piezasProdNombre"></div>
+              <div style="font-size:.78rem;color:var(--gris);">Precio m²: <span id="piezasProdPrecio"></span></div>
+            </div>
+            <button onclick="quitarProductoPiezas()" style="background:none;border:none;font-size:1.1rem;color:var(--rojo);cursor:pointer;">✕</button>
+          </div>
+        </div>
+
+        <div id="piezasTotalBox" style="display:none;margin-top:14px;background:var(--azul);color:#fff;border-radius:12px;padding:12px 16px;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:.75rem;opacity:.8;">TOTAL M²</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;" id="piezasTotalM2"></div>
+          </div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800;" id="piezasTotalPrecio"></div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button onclick="agregarPiezasAlPresupuesto()" style="flex:1;background:var(--azul);color:#fff;border:none;border-radius:8px;padding:11px;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;">
+            ➕ Agregar al presupuesto
+          </button>
+          <button onclick="limpiarPiezas()" style="background:var(--bg);color:var(--gris);border:1.5px solid var(--borde);border-radius:8px;padding:11px 14px;font-family:'Barlow Condensed',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;">
+            🗑 Limpiar
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Producto libre -->
     <div class="presup-search">
       <h3 style="cursor:pointer;" onclick="toggleProductoLibre()">&#x270F;&#xFE0F; Agregar producto libre <span id="productoLibreArrow" style="font-size:.8rem;opacity:.6;">&#9660;</span></h3>
@@ -542,6 +588,8 @@ let selectedFabricaFilter = '';
 let modalProduct = null;
 let presupCounter = 1;
 let listaActiva = 2;
+let piezasFilas = [{ cant: '', ancho: '', alto: '' }];
+let piezasProducto = null; // { id, codigo, descripcion, precio_m2 }
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfxv4fw15ouak9MSPY-0GXV9SxovhO4z-_SFq3fCRR93CRPsjer1rUtu0iwpfMOZ9xEg/exec'; // Por defecto Lista 2
 
 function setLista(num) {
@@ -963,6 +1011,7 @@ function clearSearch(id) {
   else if(id==='searchNombreCod') filtrarPorCodigo('nombre');
   else if(id==='searchCodigo'||id==='searchFabrica') filtrarPorCodigo(id==='searchCodigo'?'interno':'fabrica');
   else if(id==='presupSearch') { document.getElementById('presupResults').innerHTML=''; }
+  else if(id==='piezasSearch') { document.getElementById('piezasResults').innerHTML=''; }
 }
 
 // ==================== MODAL ====================
@@ -1115,9 +1164,10 @@ function renderPresup() {
     const desc = item.descuento || 0;
     const precioConDesc = item.precio * (1 - desc / 100);
     const totalFila = precioConDesc * item.qty;
+    const filaStyle = item.esPieza ? 'background:#dde1f5;' : '';
     return `
-    <tr>
-      <td><small>${item.codigo}</small></td>
+    <tr style="${filaStyle}">
+      <td><small>${item.codigo}${item.esPieza ? ' <span title="Calculadora de piezas">📐</span>' : ''}</small></td>
       <td style="font-size:.82rem;max-width:90px;">${item.descripcion}</td>
       <td>
         <div class="qty-ctrl">
@@ -1532,6 +1582,205 @@ function agregarProductoLibre() {
   document.getElementById('plQty').value   = 1;
   document.getElementById('plDesc').focus();
   renderPresup();
+}
+
+// ==================== CALCULADORA DE PIEZAS ====================
+function togglePiezas() {
+  const form  = document.getElementById('piezasForm');
+  const arrow = document.getElementById('piezasArrow');
+  const open  = form.style.display === 'none';
+  form.style.display = open ? 'block' : 'none';
+  arrow.textContent  = open ? '▲' : '▼';
+  if (open) renderPiezasFilas();
+}
+
+function fmtM2(n) {
+  return n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function toNum(v) {
+  if (typeof v === 'number') return v;
+  const n = parseFloat(String(v || '').trim().replace(',', '.'));
+  return isNaN(n) ? 0 : n;
+}
+
+function areaFila(f) {
+  return toNum(f.ancho) * toNum(f.alto);
+}
+
+function renderPiezasFilas() {
+  const wrap = document.getElementById('piezasFilasWrap');
+  wrap.innerHTML = `
+    <div style="display:grid;grid-template-columns:44px 1fr 1fr 1fr 1fr 30px;gap:6px;font-size:.68rem;color:var(--gris);text-transform:uppercase;letter-spacing:.3px;font-weight:600;margin-bottom:4px;">
+      <div>Cant.</div><div>Ancho(m)</div><div>Alto(m)</div><div>Unit.</div><div>Total</div><div></div>
+    </div>
+  ` + piezasFilas.map((f, idx) => `
+    <div style="display:grid;grid-template-columns:44px 1fr 1fr 1fr 1fr 30px;gap:6px;align-items:center;margin-bottom:6px;">
+      <input type="text" inputmode="decimal" id="piezaCant_${idx}" placeholder="0" value="${f.cant}"
+        oninput="actualizarFilaPieza(${idx},'cant',this.value)" onkeydown="piezaEnter(event,${idx},'cant')"
+        style="width:100%;border:1.5px solid var(--borde);border-radius:6px;padding:6px 4px;font-size:.82rem;text-align:center;background:var(--bg);">
+      <input type="text" inputmode="decimal" id="piezaAncho_${idx}" placeholder="0.00" value="${f.ancho}"
+        oninput="actualizarFilaPieza(${idx},'ancho',this.value)" onkeydown="piezaEnter(event,${idx},'ancho')"
+        style="width:100%;border:1.5px solid var(--borde);border-radius:6px;padding:6px 4px;font-size:.82rem;text-align:center;background:var(--bg);">
+      <input type="text" inputmode="decimal" id="piezaAlto_${idx}" placeholder="0.00" value="${f.alto}"
+        oninput="actualizarFilaPieza(${idx},'alto',this.value)" onkeydown="piezaEnter(event,${idx},'alto')"
+        style="width:100%;border:1.5px solid var(--borde);border-radius:6px;padding:6px 4px;font-size:.82rem;text-align:center;background:var(--bg);">
+      <div id="piezaUnit_${idx}" style="font-size:.78rem;font-weight:600;color:var(--texto);">—</div>
+      <div id="piezaTotal_${idx}" style="font-size:.78rem;font-weight:700;color:var(--azul);">—</div>
+      <button onclick="eliminarFilaPieza(${idx})" style="background:none;border:none;font-size:1rem;color:var(--rojo);cursor:pointer;">🗑</button>
+    </div>`
+  ).join('');
+  refrescarCalculosPiezas();
+}
+
+// Navegación con Enter: cant → ancho → alto → cant de la fila siguiente.
+// Si es el último campo de la última fila, agrega una fila nueva y enfoca su primer casillero.
+function piezaEnter(ev, idx, campo) {
+  if (ev.key !== 'Enter') return;
+  ev.preventDefault();
+  const orden = ['cant', 'ancho', 'alto'];
+  const pos = orden.indexOf(campo);
+  if (pos < orden.length - 1) {
+    const siguienteId = { cant: 'piezaAncho_', ancho: 'piezaAlto_', alto: '' }[campo] + idx;
+    const el = document.getElementById(siguienteId);
+    if (el) { el.focus(); el.select(); }
+    return;
+  }
+  // Estábamos en "alto"
+  if (idx < piezasFilas.length - 1) {
+    const el = document.getElementById(`piezaCant_${idx + 1}`);
+    if (el) { el.focus(); el.select(); }
+  } else {
+    agregarFilaPieza();
+    setTimeout(() => {
+      const el = document.getElementById(`piezaCant_${idx + 1}`);
+      if (el) { el.focus(); el.select(); }
+    }, 0);
+  }
+}
+
+// Actualiza solo los valores calculados (unit/total por fila + total general)
+// SIN reconstruir los inputs, para no perder el foco mientras se tipea.
+function refrescarCalculosPiezas() {
+  piezasFilas.forEach((f, idx) => {
+    const area = areaFila(f);
+    const unitEl = document.getElementById(`piezaUnit_${idx}`);
+    const totEl  = document.getElementById(`piezaTotal_${idx}`);
+    if (!unitEl || !totEl) return;
+    if (piezasProducto) {
+      const unit = area * piezasProducto.precio_m2;
+      const tot  = unit * toNum(f.cant);
+      unitEl.textContent = fmt(unit);
+      totEl.textContent  = fmt(tot);
+    } else {
+      unitEl.textContent = '—';
+      totEl.textContent  = '—';
+    }
+  });
+  actualizarTotalPiezas();
+}
+
+function agregarFilaPieza() {
+  piezasFilas.push({ cant: '', ancho: '', alto: '' });
+  renderPiezasFilas();
+}
+
+function eliminarFilaPieza(idx) {
+  piezasFilas.splice(idx, 1);
+  if (piezasFilas.length === 0) piezasFilas.push({ cant: '', ancho: '', alto: '' });
+  renderPiezasFilas();
+}
+
+function actualizarFilaPieza(idx, campo, valor) {
+  piezasFilas[idx][campo] = valor;
+  refrescarCalculosPiezas();
+}
+
+function buscarProductoPiezas() {
+  const q = document.getElementById('piezasSearch').value.toLowerCase().trim();
+  if (!q) { document.getElementById('piezasResults').innerHTML = ''; return; }
+  if (!allProducts || allProducts.length === 0) {
+    document.getElementById('piezasResults').innerHTML = '<div style="text-align:center;padding:20px;color:var(--gris);">⏳ Cargando productos...</div>';
+    return;
+  }
+  const empiezan = allProducts.filter(p => p.descripcion.toLowerCase().startsWith(q)).sort((a,b) => a.descripcion.localeCompare(b.descripcion));
+  const contienen = allProducts.filter(p => !p.descripcion.toLowerCase().startsWith(q) && (p.descripcion.toLowerCase().includes(q) || p.codigo.toLowerCase().includes(q))).sort((a,b) => a.descripcion.localeCompare(b.descripcion));
+  const res = [...empiezan, ...contienen].slice(0, 15);
+
+  document.getElementById('piezasResults').innerHTML = res.length ? res.map(p => `
+    <div class="presup-result-item" onclick="seleccionarProductoPiezas(${p.id})">
+      <div>
+        <div class="pri-name">${p.descripcion}</div>
+        <div style="font-size:.75rem;color:var(--gris);">Cód: ${p.codigo}</div>
+      </div>
+      <div class="pri-price">${fmt(p.precio_lista2)}/m²</div>
+    </div>
+  `).join('') : '<div style="text-align:center;padding:20px;color:var(--gris);">Sin resultados</div>';
+}
+
+function seleccionarProductoPiezas(id) {
+  const p = allProducts.find(x => x.id === id);
+  if (!p) return;
+  piezasProducto = { id: p.id, codigo: p.codigo, descripcion: p.descripcion, precio_lista1: p.precio_lista1, precio_lista2: p.precio_lista2, precio_m2: p.precio_lista2 };
+  document.getElementById('piezasSearch').value = '';
+  document.getElementById('piezasResults').innerHTML = '';
+  document.getElementById('piezasProductoSel').style.display = 'flex';
+  document.getElementById('piezasProdNombre').textContent = p.descripcion;
+  document.getElementById('piezasProdPrecio').textContent = fmt(p.precio_lista2);
+  refrescarCalculosPiezas();
+}
+
+function quitarProductoPiezas() {
+  piezasProducto = null;
+  document.getElementById('piezasProductoSel').style.display = 'none';
+  refrescarCalculosPiezas();
+}
+
+function actualizarTotalPiezas() {
+  const box = document.getElementById('piezasTotalBox');
+  const totalM2 = piezasFilas.reduce((s, f) => s + areaFila(f) * toNum(f.cant), 0);
+  if (!piezasProducto || totalM2 <= 0) { box.style.display = 'none'; return; }
+  const totalPrecio = totalM2 * piezasProducto.precio_m2;
+  box.style.display = 'flex';
+  document.getElementById('piezasTotalM2').textContent = fmtM2(totalM2) + ' m²';
+  document.getElementById('piezasTotalPrecio').textContent = fmt(totalPrecio);
+}
+
+function agregarPiezasAlPresupuesto() {
+  if (!piezasProducto) { alert('Elegí un producto primero'); return; }
+  const filasValidas = piezasFilas.filter(f => areaFila(f) > 0 && toNum(f.cant) > 0);
+  if (filasValidas.length === 0) { alert('Cargá al menos una pieza con medidas'); return; }
+
+  filasValidas.forEach((f, i) => {
+    const area = areaFila(f);
+    const cant = toNum(f.cant);
+    const a = toNum(f.ancho);
+    const h = toNum(f.alto);
+    const precio_lista1 = area * piezasProducto.precio_lista1;
+    const precio_lista2 = area * piezasProducto.precio_lista2;
+    presupItems.push({
+      id: 'pieza_' + Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2, 7),
+      codigo: piezasProducto.codigo,
+      descripcion: `${piezasProducto.descripcion} — ${a.toLocaleString('es-AR')}×${h.toLocaleString('es-AR')}m (${fmtM2(area)} m²/u)`,
+      precio_lista1,
+      precio_lista2,
+      lista: 2,
+      precio: precio_lista2,
+      qty: cant,
+      descuento: 0,
+      esPieza: true
+    });
+  });
+  renderPresup();
+}
+
+function limpiarPiezas() {
+  piezasFilas = [{ cant: '', ancho: '', alto: '' }];
+  piezasProducto = null;
+  document.getElementById('piezasProductoSel').style.display = 'none';
+  document.getElementById('piezasSearch').value = '';
+  document.getElementById('piezasResults').innerHTML = '';
+  renderPiezasFilas();
 }
 
 // ─── GUARDAR EN DRIVE VIA APPS SCRIPT ──────────────────────
