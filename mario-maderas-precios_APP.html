@@ -1331,8 +1331,10 @@ async function compartirWhatsapp() {
   if(!_validarVendedor()) return;
   _mostrarToast('⏳ Guardando presupuesto...');
   const txt = getPresupText(); // capturar ANTES de que save limpie los items
+  const win = window.open('', '_blank'); // abrir ANTES del await para evitar bloqueo de pop-up
   await autoGuardarDrive();
-  window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank');
+  const url = `https://wa.me/?text=${encodeURIComponent(txt)}`;
+  if (win) win.location = url; else window.open(url, '_blank');
 }
 
 async function compartirMail() {
@@ -1343,8 +1345,10 @@ async function compartirMail() {
   const cliente = document.getElementById('pCliente').value || '';
   const num = document.getElementById('pNumero').value;
   const subject = `Presupuesto N° ${num} — Mario Maderas`;
+  const win = window.open('', '_blank'); // abrir ANTES del await para evitar bloqueo de pop-up
   await autoGuardarDrive();
-  window.open(`mailto:${cliente}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(txt)}`, '_blank');
+  const url = `mailto:${cliente}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(txt)}`;
+  if (win) win.location = url; else window.open(url, '_blank');
 }
 
 function _copiarYAbrir(txt, url, appNombre) {
@@ -1418,7 +1422,10 @@ async function exportarPDF() {
   // del usuario y no la bloquea como pop-up. Se completa con el HTML al final.
   const win = window.open('', '_blank');
   if (win) { win.document.write('<p style="font-family:sans-serif;padding:24px;color:#6b7280;">Generando presupuesto…</p>'); win.document.close(); }
-  await autoGuardarDrive();
+
+  // Capturamos TODO antes del await: autoGuardarDrive() vacía presupItems
+  // y resetea el formulario al terminar, así que si leyéramos después
+  // de esperarlo, el PDF saldría vacío.
   const cliente  = document.getElementById('pCliente').value || 'Sin especificar';
   const vendedor = document.getElementById('pVendedor').value || '';
   const fechaRaw = document.getElementById('pFecha').value;
@@ -1426,16 +1433,19 @@ async function exportarPDF() {
   const fecha = `${dd}/${mm}/${yy}`;
   const num   = document.getElementById('pNumero').value;
   const obs   = document.getElementById('pObs').value;
+  const itemsSnapshot = presupItems.map(i => ({ ...i }));
+
+  await autoGuardarDrive();
   // Logo: obtener antes de construir el HTML
   let logoHtml = '<span style="font-family:Barlow Condensed,sans-serif;font-size:1.6rem;font-weight:900;letter-spacing:2px;">MARIO <span style=\"color:#5dc9a8\">MADERAS</span></span><div style=\"font-size:.8rem;opacity:.8;margin-top:2px;\">Ferretería y Materiales de Construcción</div>';
   try {
     const savedLogo = localStorage.getItem('mm_logo');
     if (savedLogo) logoHtml = '<img src=\"' + savedLogo + '\" style=\"height:44px;max-width:160px;object-fit:contain;\" alt=\"Logo\">';
   } catch(e) {}
-  const total = presupItems.reduce((s, i) => s + i.precio*(1-(i.descuento||0)/100) * i.qty, 0);
-  const items = presupItems.reduce((s, i) => s + i.qty, 0);
+  const total = itemsSnapshot.reduce((s, i) => s + i.precio*(1-(i.descuento||0)/100) * i.qty, 0);
+  const items = itemsSnapshot.reduce((s, i) => s + i.qty, 0);
 
-  const rows = presupItems.map((item, i) => {
+  const rows = itemsSnapshot.map((item, i) => {
     const precioConDesc = item.precio * (1 - (item.descuento||0)/100);
     return `
     <tr style="background:${i%2?'#f8f9ff':'#fff'}">
