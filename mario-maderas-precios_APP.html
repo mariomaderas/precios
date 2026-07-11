@@ -1414,6 +1414,10 @@ async function compartirMessenger() {
 async function exportarPDF() {
   if (presupItems.length === 0) { alert('Agregá productos primero'); return; }
   if(!_validarVendedor()) return;
+  // Abrimos la ventana ANTES de cualquier await: así Chrome la asocia al click
+  // del usuario y no la bloquea como pop-up. Se completa con el HTML al final.
+  const win = window.open('', '_blank');
+  if (win) { win.document.write('<p style="font-family:sans-serif;padding:24px;color:#6b7280;">Generando presupuesto…</p>'); win.document.close(); }
   await autoGuardarDrive();
   const cliente  = document.getElementById('pCliente').value || 'Sin especificar';
   const vendedor = document.getElementById('pVendedor').value || '';
@@ -1488,7 +1492,6 @@ async function exportarPDF() {
   <button onclick="window.close()" style="background:#f2f3f7;border:1.5px solid #e2e5ef;padding:11px 22px;border-radius:8px;font-size:.95rem;cursor:pointer;">✕ Cerrar</button>
   </body></html>`;
 
-  const win = window.open('', '_blank');
   if (win) { win.document.write(html); win.document.close(); }
   else { alert('El navegador bloqueó la ventana emergente. Permitila para ver el PDF.'); }
 }
