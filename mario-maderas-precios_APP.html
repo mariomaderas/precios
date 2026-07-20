@@ -398,6 +398,22 @@
           <label>Cliente</label>
           <input type="text" id="pCliente" placeholder="Nombre del cliente" value="Consumidor final">
         </div>
+        <div class="form-field full" style="flex-direction:row;align-items:center;gap:8px;">
+          <input type="checkbox" id="pResponsableInscripto" onchange="toggleResponsableInscripto()" style="width:17px;height:17px;accent-color:var(--azul);cursor:pointer;">
+          <label style="margin:0;text-transform:none;font-size:.88rem;font-weight:500;color:var(--texto);cursor:pointer;" onclick="document.getElementById('pResponsableInscripto').click()">¿Responsable Inscripto?</label>
+        </div>
+        <div id="camposResponsableInscripto" style="display:none;grid-column:1/-1;">
+          <div class="form-grid" style="margin-bottom:0;">
+            <div class="form-field full">
+              <label>CUIT del cliente</label>
+              <input type="text" id="pClienteCuit" placeholder="20-12345678-9">
+            </div>
+            <div class="form-field full">
+              <label>Dirección del cliente</label>
+              <input type="text" id="pClienteDireccion" placeholder="Calle y número">
+            </div>
+          </div>
+        </div>
         <div class="form-field full">
           <label>Vendedor</label>
           <input type="text" id="pVendedor" placeholder="Nombre del vendedor">
@@ -1251,7 +1267,20 @@ function limpiarPresupuesto() {
     document.getElementById('pCliente').value = 'Consumidor final';
     document.getElementById('pVendedor').value = '';
     document.getElementById('pObs').value = '';
+    document.getElementById('pResponsableInscripto').checked = false;
+    document.getElementById('pClienteCuit').value = '';
+    document.getElementById('pClienteDireccion').value = '';
+    toggleResponsableInscripto();
     renderPresup();
+  }
+}
+
+function toggleResponsableInscripto() {
+  const checked = document.getElementById('pResponsableInscripto').checked;
+  document.getElementById('camposResponsableInscripto').style.display = checked ? 'block' : 'none';
+  if (!checked) {
+    document.getElementById('pClienteCuit').value = '';
+    document.getElementById('pClienteDireccion').value = '';
   }
 }
 
@@ -1259,6 +1288,9 @@ function limpiarPresupuesto() {
 function getPresupText() {
   const cliente  = document.getElementById('pCliente').value || 'Sin nombre';
   const vendedor = document.getElementById('pVendedor').value || '';
+  const resInsc  = document.getElementById('pResponsableInscripto').checked;
+  const clienteCuit = document.getElementById('pClienteCuit').value || '';
+  const clienteDir  = document.getElementById('pClienteDireccion').value || '';
   const fechaRaw = document.getElementById('pFecha').value;
   const [yy, mm, dd] = fechaRaw.split('-');
   const fecha = `${dd}/${mm}/${yy}`;
@@ -1269,6 +1301,8 @@ function getPresupText() {
   let txt = `*MARIO MADERAS*\n`;
   txt += `Presupuesto N° ${num} - ${fecha}\n`;
   txt += `Cliente: ${cliente}\n`;
+  if(resInsc && clienteCuit) txt += `CUIT: ${clienteCuit}\n`;
+  if(resInsc && clienteDir) txt += `Dirección: ${clienteDir}\n`;
   if(vendedor) txt += `Vendedor: ${vendedor}\n`;
   txt += `------------------\n`;
   presupItems.forEach(item => {
@@ -1428,6 +1462,9 @@ async function exportarPDF() {
   // de esperarlo, el PDF saldría vacío.
   const cliente  = document.getElementById('pCliente').value || 'Sin especificar';
   const vendedor = document.getElementById('pVendedor').value || '';
+  const resInsc  = document.getElementById('pResponsableInscripto').checked;
+  const clienteCuit = document.getElementById('pClienteCuit').value || '';
+  const clienteDir  = document.getElementById('pClienteDireccion').value || '';
   const fechaRaw = document.getElementById('pFecha').value;
   const [yy, mm, dd] = fechaRaw.split('-');
   const fecha = `${dd}/${mm}/${yy}`;
@@ -1437,7 +1474,7 @@ async function exportarPDF() {
 
   await autoGuardarDrive();
   // Logo: obtener antes de construir el HTML
-  let logoHtml = '<span style="font-family:Barlow Condensed,sans-serif;font-size:1.6rem;font-weight:900;letter-spacing:2px;">MARIO <span style=\"color:#5dc9a8\">MADERAS</span></span><div style=\"font-size:.8rem;opacity:.8;margin-top:2px;\">Ferretería y Materiales de Construcción</div>';
+  let logoHtml = '<span style="font-family:Barlow Condensed,sans-serif;font-size:1.6rem;font-weight:900;letter-spacing:2px;">MARIO <span style=\"color:#5dc9a8\">MADERAS</span></span>';
   try {
     const savedLogo = localStorage.getItem('mm_logo');
     if (savedLogo) logoHtml = '<img src=\"' + savedLogo + '\" style=\"height:44px;max-width:160px;object-fit:contain;\" alt=\"Logo\">';
@@ -1465,7 +1502,7 @@ async function exportarPDF() {
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
   <style>
     body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#1a1a2e;}
-    .header{background:#2222cc;color:#fff;padding:16px 20px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+    .header{background:#2222cc;color:#fff;padding:18px 20px;border-radius:10px;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
     .logo{font-size:1.6rem;font-weight:900;letter-spacing:2px;}
     .logo span{color:#5dc9a8;}
     .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
@@ -1476,19 +1513,24 @@ async function exportarPDF() {
     thead{background:#2222cc;color:#fff;}
     th{padding:8px 10px;text-align:left;font-size:.82rem;}
     .total-box{background:#2222cc;color:#fff;padding:14px 18px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;}
-    .footer{margin-top:14px;font-size:.72rem;color:#9ca3af;text-align:center;border-top:1px solid #eee;padding-top:10px;}
-    @media print{button{display:none!important;} body{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;} .header{background:#2222cc!important;color:#fff!important;} .total-box{background:#2222cc!important;color:#fff!important;}}
+    .footer{margin-top:10px;font-size:.72rem;color:#9ca3af;text-align:center;}
+    .footer-contacto{margin-top:14px;background:#2222cc;color:#fff;border-radius:8px;padding:10px 16px;text-align:center;font-size:.74rem;line-height:1.6;}
+    @media print{button{display:none!important;} body{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;} .header{background:#2222cc!important;color:#fff!important;} .total-box{background:#2222cc!important;color:#fff!important;} .footer-contacto{background:#2222cc!important;color:#fff!important;}}
   </style></head><body>
   <div class="header">
-    <div style="display:flex;flex-direction:column;gap:2px;">
-      <div style="display:flex;align-items:center;gap:10px;">${logoHtml}</div>
-      <div style="font-size:.68rem;opacity:.85;">Bonnot Silvia L. — CUIT 27-14307828-6</div>
+    <div style="display:flex;align-items:center;gap:10px;">${logoHtml}</div>
+    <div style="text-align:right;">
+      <div style="font-size:1.1rem;font-weight:800;">PRESUPUESTO N° ${num}</div>
+      <div style="opacity:.8;font-size:.82rem;">${fecha}</div>
+      <div style="opacity:.85;font-size:.68rem;margin-top:8px;">Razón social: Bonnot Silvia L.</div>
+      <div style="opacity:.85;font-size:.68rem;">CUIT: 27-14307828-6</div>
     </div>
-    <div style="text-align:right;"><div style="font-size:1.1rem;font-weight:800;">PRESUPUESTO N° ${num}</div><div style="opacity:.8;font-size:.82rem;">${fecha}</div></div>
   </div>
   <div class="info-grid">
     <div class="info-box"><div class="info-label">Cliente</div><div class="info-val">${cliente}</div></div>
     ${vendedor ? `<div class="info-box"><div class="info-label">Vendedor</div><div class="info-val">${vendedor}</div></div>` : `<div class="info-box"><div class="info-label">Total artículos</div><div class="info-val">${items} unidad${items!==1?'es':''}</div></div>`}
+    ${resInsc && clienteCuit ? `<div class="info-box"><div class="info-label">CUIT Cliente</div><div class="info-val">${clienteCuit}</div></div>` : ''}
+    ${resInsc && clienteDir ? `<div class="info-box"><div class="info-label">Dirección Cliente</div><div class="info-val" style="font-weight:400;font-size:.88rem;">${clienteDir}</div></div>` : ''}
     ${obs?`<div class="info-box" style="grid-column:1/-1"><div class="info-label">Observaciones</div><div class="info-val" style="font-weight:400;font-size:.88rem;">${obs}</div></div>`:''}
   </div>
   <table>
@@ -1500,6 +1542,11 @@ async function exportarPDF() {
     <div style="font-size:1.6rem;font-weight:900;">${fmt(total)}</div>
   </div>
   <div class="footer">Mario Maderas — Precios con IVA incluido. Sujetos a cambio sin previo aviso.</div>
+  <div class="footer-contacto">
+    Av. Ramírez Sur 4504 Esq. Bco. Centenera - Paraná<br>
+    Tel 0343-4350731/ 4354733 Whatsapp 3435035838<br>
+    info@mariomaderas.com  mariomaderas_express@yahoo.com.ar  www.mariomaderas.com
+  </div>
   <br>
   <button onclick="window.print()" style="background:#2222cc;color:#fff;border:none;padding:11px 22px;border-radius:8px;font-size:.95rem;cursor:pointer;margin-right:8px;">🖨️ Imprimir / Guardar PDF</button>
   <button onclick="window.close()" style="background:#f2f3f7;border:1.5px solid #e2e5ef;padding:11px 22px;border-radius:8px;font-size:.95rem;cursor:pointer;">✕ Cerrar</button>
@@ -1524,6 +1571,9 @@ function autoGuardarDrive() {
 async function _ejecutarGuardarDrive(num) {
   const cliente  = document.getElementById('pCliente').value || 'Sin nombre';
   const vendedor = document.getElementById('pVendedor').value || '';
+  const resInsc  = document.getElementById('pResponsableInscripto').checked;
+  const clienteCuit = document.getElementById('pClienteCuit').value || '';
+  const clienteDir  = document.getElementById('pClienteDireccion').value || '';
   const fechaRaw = document.getElementById('pFecha').value;
   const [yy, mm, dd] = fechaRaw.split('-');
   const fecha    = `${dd}/${mm}/${yy}`;
@@ -1545,6 +1595,9 @@ async function _ejecutarGuardarDrive(num) {
       action: 'guardarPresupuesto',
       presupuesto: {
         numero: num, fecha, cliente, vendedor, obs, total,
+        responsableInscripto: resInsc,
+        clienteCuit,
+        clienteDireccion: clienteDir,
         items: presupItems.map(i => {
           const p = i.precio*(1-(i.descuento||0)/100);
           return `[${i.codigo||'*'}] ${i.descripcion} x${i.qty}${i.descuento>0?' -'+i.descuento+'%':''} = ${fmt(p*i.qty)}`;
@@ -1579,6 +1632,10 @@ async function _ejecutarGuardarDrive(num) {
     document.getElementById('pCliente').value = 'Consumidor final';
     document.getElementById('pVendedor').value = '';
     document.getElementById('pObs').value = '';
+    document.getElementById('pResponsableInscripto').checked = false;
+    document.getElementById('pClienteCuit').value = '';
+    document.getElementById('pClienteDireccion').value = '';
+    toggleResponsableInscripto();
     renderPresup();
     _mostrarToast('✅ Presupuesto N°' + numReal + ' guardado');
   }
