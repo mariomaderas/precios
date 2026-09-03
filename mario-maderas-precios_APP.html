@@ -624,6 +624,12 @@ let presupCounter = 1;
 let listaActiva = 2;
 let piezasFilas = [{ cant: '', largo: '', ancho: '' }];
 let piezasProducto = null; // { id, codigo, descripcion, precio_m2 }
+// Rastrea si esta sesión YA confirmó una sincronización real con el servidor
+// (no solo caché local ni datos de respaldo offline embebidos en el archivo).
+// 'fallback' = usando datos offline embebidos (puede tener precios viejos)
+// 'cache'    = usando localStorage (puede ser de hasta 4hs de antigüedad)
+// 'fresco'   = confirmado recién con el servidor en esta sesión
+let _syncEstado = 'fallback';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfxv4fw15ouak9MSPY-0GXV9SxovhO4z-_SFq3fCRR93CRPsjer1rUtu0iwpfMOZ9xEg/exec'; // Por defecto Lista 2
 
 function setLista(num) {
@@ -662,6 +668,7 @@ function loadData() {
       const parsed = JSON.parse(cached);
       if (parsed && parsed.length > 0) {
         allProducts = parsed;
+        _syncEstado = 'cache';
         const cacheDate = new Date(cachedTime);
         document.getElementById('fechaActual').innerHTML =
           (age < CACHE_TTL ? '🟢 ' : '🟡 ') +
@@ -706,6 +713,7 @@ function actualizarEnSegundoPlano(url, cacheKey, cacheTimeKey) {
         precio_lista2: parseFloat(p.precio_lista2)||0,
       }));
     if (fresh.length === 0) return;
+    _syncEstado = 'fresco';
     // Guardar en localStorage
     try {
       localStorage.setItem(cacheKey, JSON.stringify(fresh));
@@ -1287,18 +1295,38 @@ function toggleResponsableInscripto() {
 }
 
 // ==================== EXPORT ====================
-function getPresupText() {
-  const cliente  = document.getElementById('pCliente').value || 'Sin nombre';
-  const vendedor = document.getElementById('pVendedor').value || '';
-  const resInsc  = document.getElementById('pResponsableInscripto').checked;
-  const clienteCuit = document.getElementById('pClienteCuit').value || '';
-  const clienteDir  = document.getElementById('pClienteDireccion').value || '';
+// Captura un "snapshot" de todos los datos del presupuesto ANTES de guardar,
+// porque _ejecutarGuardarDrive() limpia la pantalla al terminar con éxito.
+function _capturarSnapshotPresup() {
   const fechaRaw = document.getElementById('pFecha').value;
   const [yy, mm, dd] = fechaRaw.split('-');
-  const fecha = `${dd}/${mm}/${yy}`;
-  const num = document.getElementById('pNumero').value;
-  const obs = document.getElementById('pObs').value;
-  const total = presupItems.reduce((s,i)=>s + i.precio*(1-(i.descuento||0)/100)*i.qty, 0);
+  return {
+    cliente: document.getElementById('pCliente').value || 'Sin nombre',
+    vendedor: document.getElementById('pVendedor').value || '',
+    resInsc: document.getElementById('pResponsableInscripto').checked,
+    clienteCuit: document.getElementById('pClienteCuit').value || '',
+    clienteDir: document.getElementById('pClienteDireccion').value || '',
+    fecha: `${dd}/${mm}/${yy}`,
+    obs: document.getElementById('pObs').value,
+    items: presupItems.map(i => ({ ...i })),
+    total: presupItems.reduce((s,i)=>s + i.precio*(1-(i.descuento||0)/100)*i.qty, 0)
+  };
+}
+
+function getPresupText(snapshot) {
+  const s = snapshot || _capturarSnapshotPresup();
+  const cliente = s.cliente;
+  const vendedor = s.vendedor;
+  const resInsc = s.resInsc;
+  const clienteCuit = s.clienteCuit;
+  const clienteDir = s.clienteDir;
+  const fecha = s.fecha;
+  // El número SIEMPRE se toma del snapshot si viene provisto (número real confirmado
+  // por el servidor); si no, se lee de pantalla como estimación (compatibilidad).
+  const num = s.numero || document.getElementById('pNumero').value;
+  const obs = s.obs;
+  const items = s.items || presupItems;
+  const total = typeof s.total === 'number' ? s.total : items.reduce((sum,i)=>sum + i.precio*(1-(i.descuento||0)/100)*i.qty, 0);
 
   let txt = `*MARIO MADERAS*\n`;
   txt += `Presupuesto N° ${num} - ${fecha}\n`;
@@ -1307,7 +1335,7 @@ function getPresupText() {
   if(resInsc && clienteDir) txt += `Dirección: ${clienteDir}\n`;
   if(vendedor) txt += `Vendedor: ${vendedor}\n`;
   txt += `------------------\n`;
-  presupItems.forEach(item => {
+  items.forEach(item => {
     const precioConDesc = item.precio * (1 - (item.descuento||0)/100);
     txt += `\n`;
     txt += `[${item.codigo||'*'}] ${item.descripcion}\n`;
@@ -1337,11 +1365,32 @@ function _validarVendedor() {
   return true;
 }
 
+// Si esta sesión todavía no confirmó datos reales del servidor (está usando
+// caché viejo o el respaldo offline embebido), avisa antes de continuar.
+function _confirmarPreciosOK() {
+  if (_syncEstado === 'fresco') return true;
+  const msg = _syncEstado === 'fallback'
+    ? '⚠️ Todavía no se confirmó conexión con el servidor en este dispositivo — los precios y el número de presupuesto podrían no estar actualizados.\n\n¿Continuar de todas formas?'
+    : '⚠️ Los precios podrían no estar actualizados (todavía no se confirmó la última sincronización).\n\n¿Continuar de todas formas?';
+  return confirm(msg);
+}
+
 async function copiarTexto() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
   if(!_validarVendedor()) return;
-  const txt = getPresupText().replace(/\*/g,'').replace(/_/g,'');
-  // Copiar primero (antes de que la pantalla se limpie)
+  if(!_confirmarPreciosOK()) return;
+  _mostrarToast('⏳ Guardando presupuesto...');
+  const snapshot = _capturarSnapshotPresup(); // capturar ANTES de que save limpie la pantalla
+  const num = document.getElementById('pNumero').value;
+  let numReal = num;
+  if (_ultimoNumeroGuardado !== num) {
+    _ultimoNumeroGuardado = num;
+    try {
+      const confirmado = await _ejecutarGuardarDrive(num);
+      if (confirmado) numReal = confirmado;
+    } catch(e) { console.warn('copiarTexto save:', e.message); }
+  }
+  const txt = getPresupText({ ...snapshot, numero: numReal }).replace(/\*/g,'').replace(/_/g,'');
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(txt);
@@ -1353,22 +1402,19 @@ async function copiarTexto() {
       document.body.removeChild(ta);
     }
   } catch(e) {}
-  // Guardar en Drive (igual que los otros botones)
-  const num = document.getElementById('pNumero').value;
-  if (_ultimoNumeroGuardado !== num) {
-    _ultimoNumeroGuardado = num;
-    try { await _ejecutarGuardarDrive(num); } catch(e) { console.warn('copiarTexto save:', e.message); }
-  }
   _mostrarToast('📋 Texto copiado y presupuesto guardado');
 }
 
 async function compartirWhatsapp() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
   if(!_validarVendedor()) return;
+  if(!_confirmarPreciosOK()) return;
   _mostrarToast('⏳ Guardando presupuesto...');
-  const txt = getPresupText(); // capturar ANTES de que save limpie los items
+  const snapshot = _capturarSnapshotPresup(); // capturar ANTES de que save limpie los items
   const win = window.open('', '_blank'); // abrir ANTES del await para evitar bloqueo de pop-up
-  await autoGuardarDrive();
+  const numGuess = document.getElementById('pNumero').value;
+  const numReal = await autoGuardarDrive();
+  const txt = getPresupText({ ...snapshot, numero: numReal || numGuess });
   const url = `https://wa.me/?text=${encodeURIComponent(txt)}`;
   if (win) win.location = url; else window.open(url, '_blank');
 }
@@ -1376,13 +1422,16 @@ async function compartirWhatsapp() {
 async function compartirMail() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
   if(!_validarVendedor()) return;
+  if(!_confirmarPreciosOK()) return;
   _mostrarToast('⏳ Guardando presupuesto...');
-  const txt = getPresupText().replace(/\*/g,'').replace(/_/g,''); // capturar ANTES
-  const cliente = document.getElementById('pCliente').value || '';
-  const num = document.getElementById('pNumero').value;
-  const subject = `Presupuesto N° ${num} — Mario Maderas`;
+  const snapshot = _capturarSnapshotPresup(); // capturar ANTES
+  const cliente = snapshot.cliente;
   const win = window.open('', '_blank'); // abrir ANTES del await para evitar bloqueo de pop-up
-  await autoGuardarDrive();
+  const numGuess = document.getElementById('pNumero').value;
+  const numReal = await autoGuardarDrive();
+  const numFinal = numReal || numGuess;
+  const txt = getPresupText({ ...snapshot, numero: numFinal }).replace(/\*/g,'').replace(/_/g,'');
+  const subject = `Presupuesto N° ${numFinal} — Mario Maderas`;
   const url = `mailto:${cliente}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(txt)}`;
   if (win) win.location = url; else window.open(url, '_blank');
 }
@@ -1435,18 +1484,24 @@ function _mostrarToast(msg) {
 async function compartirInstagram() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
   if(!_validarVendedor()) return;
+  if(!_confirmarPreciosOK()) return;
   _mostrarToast('⏳ Guardando presupuesto...');
-  const txt = getPresupText().replace(/\*/g,'').replace(/_/g,''); // capturar ANTES
-  await autoGuardarDrive();
+  const snapshot = _capturarSnapshotPresup(); // capturar ANTES
+  const numGuess = document.getElementById('pNumero').value;
+  const numReal = await autoGuardarDrive();
+  const txt = getPresupText({ ...snapshot, numero: numReal || numGuess }).replace(/\*/g,'').replace(/_/g,'');
   _copiarYAbrir(txt, 'https://www.instagram.com/direct/inbox/', 'Instagram');
 }
 
 async function compartirMessenger() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
   if(!_validarVendedor()) return;
+  if(!_confirmarPreciosOK()) return;
   _mostrarToast('⏳ Guardando presupuesto...');
-  const txt = getPresupText().replace(/\*/g,'').replace(/_/g,''); // capturar ANTES
-  await autoGuardarDrive();
+  const snapshot = _capturarSnapshotPresup(); // capturar ANTES
+  const numGuess = document.getElementById('pNumero').value;
+  const numReal = await autoGuardarDrive();
+  const txt = getPresupText({ ...snapshot, numero: numReal || numGuess }).replace(/\*/g,'').replace(/_/g,'');
   _copiarYAbrir(txt, 'https://www.messenger.com/', 'Messenger');
 }
 
@@ -1454,6 +1509,7 @@ async function compartirMessenger() {
 async function exportarPDF() {
   if (presupItems.length === 0) { alert('Agregá productos primero'); return; }
   if(!_validarVendedor()) return;
+  if(!_confirmarPreciosOK()) return;
   // Abrimos la ventana ANTES de cualquier await: así Chrome la asocia al click
   // del usuario y no la bloquea como pop-up. Se completa con el HTML al final.
   const win = window.open('', '_blank');
@@ -1470,11 +1526,12 @@ async function exportarPDF() {
   const fechaRaw = document.getElementById('pFecha').value;
   const [yy, mm, dd] = fechaRaw.split('-');
   const fecha = `${dd}/${mm}/${yy}`;
-  const num   = document.getElementById('pNumero').value;
+  const num   = document.getElementById('pNumero').value; // estimación inicial, se corrige abajo
   const obs   = document.getElementById('pObs').value;
   const itemsSnapshot = presupItems.map(i => ({ ...i }));
 
-  await autoGuardarDrive();
+  const numReal = await autoGuardarDrive();
+  const numFinal = numReal || num; // usar el N° confirmado por el servidor si está disponible
   // Logo: obtener antes de construir el HTML
   let logoHtml = '<span style="font-family:Barlow Condensed,sans-serif;font-size:1.6rem;font-weight:900;letter-spacing:2px;">MARIO <span style=\"color:#5dc9a8\">MADERAS</span></span>';
   try {
@@ -1522,7 +1579,7 @@ async function exportarPDF() {
   <div class="header">
     <div style="display:flex;align-items:center;gap:10px;">${logoHtml}</div>
     <div style="text-align:right;">
-      <div style="font-size:1.1rem;font-weight:800;">PRESUPUESTO N° ${num}</div>
+      <div style="font-size:1.1rem;font-weight:800;">PRESUPUESTO N° ${numFinal}</div>
       <div style="opacity:.8;font-size:.82rem;">${fecha}</div>
       <div style="opacity:.85;font-size:.68rem;margin-top:8px;">Razón social: Bonnot Silvia L.</div>
       <div style="opacity:.85;font-size:.68rem;">CUIT: 27-14307828-6</div>
@@ -1565,9 +1622,9 @@ let _ultimoNumeroGuardado = null;
 
 function autoGuardarDrive() {
   const num = document.getElementById('pNumero').value;
-  if (_ultimoNumeroGuardado === num) return Promise.resolve();
+  if (_ultimoNumeroGuardado === num) return Promise.resolve(num); // ya guardado; el campo ya tiene el N° confirmado
   _ultimoNumeroGuardado = num;
-  return _ejecutarGuardarDrive(num).catch(e => { console.warn('autoGuardar:', e.message); });
+  return _ejecutarGuardarDrive(num).catch(e => { console.warn('autoGuardar:', e.message); return null; });
 }
 
 async function _ejecutarGuardarDrive(num) {
@@ -1640,7 +1697,10 @@ async function _ejecutarGuardarDrive(num) {
     toggleResponsableInscripto();
     renderPresup();
     _mostrarToast('✅ Presupuesto N°' + numReal + ' guardado');
+    return numReal;
   }
+  console.warn('guardarPresupuesto no OK:', json.error);
+  return null;
 }
 
 // ─── PRODUCTO LIBRE ──────────────────────────────────────────
