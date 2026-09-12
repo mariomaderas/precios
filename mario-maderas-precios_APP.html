@@ -141,6 +141,8 @@
     font-size: 1.35rem; font-weight: 800; color: var(--rojo);
   }
   .price-val.lista2 { color: var(--azul); }
+  .price-val-fecha { font-size: .9rem; font-weight: 700; color: var(--gris); }
+  .price-box .price-val-fecha { font-size: .9rem; }
   .add-btn {
     position: absolute; top: 50%; right: 12px; transform: translateY(-50%);
     width: 36px; height: 36px; border-radius: 50%;
@@ -711,6 +713,7 @@ function actualizarEnSegundoPlano(url, cacheKey, cacheTimeKey) {
         descripcion: String(p.descripcion||'').trim(),
         precio_lista1: parseFloat(p.precio_lista1)||0,
         precio_lista2: parseFloat(p.precio_lista2)||0,
+        fecha_ult_precio: String(p.fecha_ult_precio||'').trim(),
       }));
     if (fresh.length === 0) return;
     _syncEstado = 'fresco';
@@ -816,7 +819,8 @@ async function loadStaticData() {
       cod_fabrica: String(r[1]||'').trim(),
       descripcion: String(r[2]||'').trim(),
       precio_lista1: parseFloat(r[3])||0,
-      precio_lista2: parseFloat(r[4])||0
+      precio_lista2: parseFloat(r[4])||0,
+      fecha_ult_precio: String(r[5]||'').trim()
     })).filter(p => p.descripcion);
     init();
     cargarUltimaActualizacion();
@@ -1023,6 +1027,10 @@ function renderProducts(list, containerId, countId, highlight='') {
         ${p.cod_fabrica ? `<span class="code-badge"><strong>Fab:</strong> ${hl(p.cod_fabrica)}</span>` : ''}
       </div>
       <div class="prices-row">
+        <div class="price-box">
+          <div class="price-label">Actualizado</div>
+          <div class="price-val price-val-fecha">${p.fecha_ult_precio || '—'}</div>
+        </div>
         <div class="price-box">
           <div class="price-label">Lista 1</div>
           <div class="price-val">${fmt(p.precio_lista1)}</div>
