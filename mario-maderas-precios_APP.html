@@ -594,6 +594,8 @@
     <h3 id="modalTitle">Producto</h3>
     <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;" id="modalCodes"></div>
     <div id="modalPrices"></div>
+    <div id="modalCostoBox" style="display:none;margin-top:10px;background:#fff7e6;border:1.5px solid #f0c96b;border-radius:10px;padding:12px;"></div>
+    <button class="modal-add-btn" id="btnVerCosto" style="background:var(--bg);color:var(--gris);border:1.5px solid var(--borde);margin-top:10px;" onclick="verCosto()">🔒 Ver costo</button>
     <button class="modal-add-btn" onclick="addToPresupFromModal()">➕ Agregar al Presupuesto</button>
   </div>
 </div>
@@ -633,6 +635,7 @@ let piezasProducto = null; // { id, codigo, descripcion, precio_m2 }
 // 'cache'    = usando localStorage (puede ser de hasta 4hs de antigüedad)
 // 'fresco'   = confirmado recién con el servidor en esta sesión
 let _syncEstado = 'fallback';
+let _configApp = {}; // guarda la config del servidor (incluye pinCosto)
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfxv4fw15ouak9MSPY-0GXV9SxovhO4z-_SFq3fCRR93CRPsjer1rUtu0iwpfMOZ9xEg/exec'; // Por defecto Lista 2
 
 function setLista(num) {
@@ -715,6 +718,12 @@ function actualizarEnSegundoPlano(url, cacheKey, cacheTimeKey) {
         precio_lista1: parseFloat(p.precio_lista1)||0,
         precio_lista2: parseFloat(p.precio_lista2)||0,
         fecha_ult_precio: String(p.fecha_ult_precio||'').trim(),
+        costo: parseFloat(p.costo)||0,
+        desc1: String(p.desc1||'0').trim(),
+        desc2: String(p.desc2||'0').trim(),
+        desc3: String(p.desc3||'0').trim(),
+        desc4: String(p.desc4||'0').trim(),
+        costo_sin_iva: parseFloat(p.costo_sin_iva)||0,
       }));
     if (fresh.length === 0) return;
     _syncEstado = 'fresco';
@@ -821,7 +830,8 @@ async function loadStaticData() {
       descripcion: String(r[2]||'').trim(),
       precio_lista1: parseFloat(r[3])||0,
       precio_lista2: parseFloat(r[4])||0,
-      fecha_ult_precio: String(r[5]||'').trim()
+      fecha_ult_precio: String(r[5]||'').trim(),
+      costo: 0, desc1: '0', desc2: '0', desc3: '0', desc4: '0', costo_sin_iva: 0
     })).filter(p => p.descripcion);
     init();
     cargarUltimaActualizacion();
@@ -852,7 +862,7 @@ function cargarUltimaActualizacion() {
     delete window[cbName];
     if(script.parentNode) script.parentNode.removeChild(script);
     let ua = '';
-    if (json.ok && json.config) ua = json.config.ultima_actualizacion || '';
+    if (json.ok && json.config) { ua = json.config.ultima_actualizacion || ''; _configApp = json.config; }
     if (ua) {
       // ua puede venir como "04/06/2026 10:31" (texto del sheet) — usarlo directo
       // o como fecha JS larga — parsear y reformatear
@@ -1095,7 +1105,46 @@ function openModal(id) {
       <div><div class="modal-price-label">LISTA 2</div><div class="modal-price-val" style="color:var(--azul)">${fmt(p.precio_lista2)}</div></div>
     </div>
   `;
+  // Resetear el bloque de costo para que no quede visible del producto anterior
+  document.getElementById('modalCostoBox').style.display = 'none';
+  document.getElementById('modalCostoBox').innerHTML = '';
+  document.getElementById('btnVerCosto').style.display = 'block';
+  document.getElementById('btnVerCosto').textContent = '🔒 Ver costo';
   document.getElementById('modalOverlay').classList.add('open');
+}
+
+function verCosto() {
+  if (!modalProduct) return;
+  const pinReal = (_configApp && _configApp.pinCosto) ? String(_configApp.pinCosto).trim() : '';
+  if (!pinReal) {
+    alert('⚠️ Todavía no hay un PIN configurado para ver costos. Pedile a Mario que agregue la clave "pinCosto" en la hoja config.');
+    return;
+  }
+  const ingresado = prompt('🔒 Ingresá el PIN para ver el costo:');
+  if (ingresado === null) return; // canceló
+  if (String(ingresado).trim() !== pinReal) {
+    alert('❌ PIN incorrecto');
+    return;
+  }
+  const p = modalProduct;
+  const desc = [p.desc1, p.desc2, p.desc3, p.desc4].map(d => d || '0').join(' / ');
+  document.getElementById('modalCostoBox').innerHTML = `
+    <div style="font-size:.68rem;color:#8a6d1f;text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:8px;">🔒 Información de costo</div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+      <span style="font-size:.85rem;color:#6b5a2a;">Costo</span>
+      <strong style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;">${fmt(p.costo)}</strong>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+      <span style="font-size:.85rem;color:#6b5a2a;">Desc.</span>
+      <strong style="font-size:.95rem;">${desc}</strong>
+    </div>
+    <div style="display:flex;justify-content:space-between;">
+      <span style="font-size:.85rem;color:#6b5a2a;">Costo sin IVA</span>
+      <strong style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;">${fmt(p.costo_sin_iva)}</strong>
+    </div>
+  `;
+  document.getElementById('modalCostoBox').style.display = 'block';
+  document.getElementById('btnVerCosto').style.display = 'none';
 }
 
 function closeModal(e) {
