@@ -695,14 +695,17 @@ function loadData() {
   });
 }
 
-function actualizarEnSegundoPlano(url, cacheKey, cacheTimeKey) {
+function actualizarEnSegundoPlano(url, cacheKey, cacheTimeKey, intento) {
+  intento = intento || 0;
   if (window.location.protocol === 'file:') return;
-  const cbName = 'mm_cb_' + Date.now();
+  const cbName = 'mm_cb_' + Date.now() + '_' + intento;
   const script = document.createElement('script');
   const timer = setTimeout(() => {
     delete window[cbName];
     if (script.parentNode) script.parentNode.removeChild(script);
-  }, 30000);
+    // Si es el primer intento, reintentar una vez antes de rendirse
+    if (intento < 1) actualizarEnSegundoPlano(url, cacheKey, cacheTimeKey, intento + 1);
+  }, 60000);
   window[cbName] = function(json) {
     clearTimeout(timer);
     delete window[cbName];
@@ -745,7 +748,10 @@ function actualizarEnSegundoPlano(url, cacheKey, cacheTimeKey) {
     cargarUltimaActualizacion();
   };
   script.src = url + '?action=all&callback=' + cbName + '&t=' + Date.now();
-  script.onerror = () => { clearTimeout(timer); delete window[cbName]; };
+  script.onerror = () => {
+    clearTimeout(timer); delete window[cbName];
+    if (intento < 1) actualizarEnSegundoPlano(url, cacheKey, cacheTimeKey, intento + 1);
+  };
   document.head.appendChild(script);
 }
 
