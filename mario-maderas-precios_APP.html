@@ -718,6 +718,7 @@ function actualizarEnSegundoPlano(url, cacheKey, cacheTimeKey) {
         precio_lista1: parseFloat(p.precio_lista1)||0,
         precio_lista2: parseFloat(p.precio_lista2)||0,
         fecha_ult_precio: String(p.fecha_ult_precio||'').trim(),
+        proveedor: String(p.proveedor||'').trim(),
         costo: parseFloat(p.costo)||0,
         desc1: String(p.desc1||'0').trim(),
         desc2: String(p.desc2||'0').trim(),
@@ -831,6 +832,7 @@ async function loadStaticData() {
       precio_lista1: parseFloat(r[3])||0,
       precio_lista2: parseFloat(r[4])||0,
       fecha_ult_precio: String(r[5]||'').trim(),
+      proveedor: '',
       costo: 0, desc1: '0', desc2: '0', desc3: '0', desc4: '0', costo_sin_iva: 0
     })).filter(p => p.descripcion);
     init();
@@ -1098,6 +1100,7 @@ function openModal(id) {
   document.getElementById('modalCodes').innerHTML = `
     <span class="code-badge"><strong>Código:</strong> ${p.codigo}</span>
     ${p.cod_fabrica ? `<span class="code-badge"><strong>Fábrica:</strong> ${p.cod_fabrica}</span>` : ''}
+    ${p.proveedor ? `<span class="code-badge"><strong>Proveedor:</strong> ${p.proveedor}</span>` : ''}
   `;
   document.getElementById('modalPrices').innerHTML = `
     <div class="modal-price-row">
