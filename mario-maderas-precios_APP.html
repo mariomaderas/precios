@@ -1450,34 +1450,53 @@ function _confirmarPreciosOK() {
   return confirm(msg);
 }
 
+async function _copiarAlPortapapeles(txt) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(txt);
+      return true;
+    }
+    throw new Error('Clipboard API no disponible');
+  } catch(e) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = txt; ta.style.cssText = 'position:fixed;opacity:0;';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      return true;
+    } catch(e2) { return false; }
+  }
+}
+
 async function copiarTexto() {
   if(presupItems.length===0){alert('Agregá productos primero');return;}
   if(!_validarVendedor()) return;
   if(!_confirmarPreciosOK()) return;
-  _mostrarToast('⏳ Guardando presupuesto...');
+
   const snapshot = _capturarSnapshotPresup(); // capturar ANTES de que save limpie la pantalla
   const num = document.getElementById('pNumero').value;
-  let numReal = num;
+  const txt = getPresupText({ ...snapshot, numero: num }).replace(/\*/g,'').replace(/_/g,'');
+
+  // Copiar YA, en el mismo click, antes de cualquier "await": si esperamos
+  // a que termine el guardado, algunos navegadores pierden el permiso de
+  // "gesto del usuario" y el portapapeles falla en silencio (obligando a
+  // un segundo click). Si el número real termina siendo distinto, se
+  // vuelve a copiar corregido más abajo.
+  await _copiarAlPortapapeles(txt);
+  _mostrarToast('📋 Texto copiado, guardando presupuesto...');
+
   if (_ultimoNumeroGuardado !== num) {
     _ultimoNumeroGuardado = num;
     try {
       const confirmado = await _ejecutarGuardarDrive(num);
-      if (confirmado) numReal = confirmado;
+      if (confirmado && confirmado !== num) {
+        const txtCorregido = getPresupText({ ...snapshot, numero: confirmado }).replace(/\*/g,'').replace(/_/g,'');
+        await _copiarAlPortapapeles(txtCorregido);
+      }
+      _mostrarToast('✅ Presupuesto guardado');
     } catch(e) { console.warn('copiarTexto save:', e.message); }
   }
-  const txt = getPresupText({ ...snapshot, numero: numReal }).replace(/\*/g,'').replace(/_/g,'');
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(txt);
-    } else {
-      const ta = document.createElement('textarea');
-      ta.value = txt; ta.style.cssText = 'position:fixed;opacity:0;';
-      document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); } catch(e){}
-      document.body.removeChild(ta);
-    }
-  } catch(e) {}
-  _mostrarToast('📋 Texto copiado y presupuesto guardado');
 }
 
 async function compartirWhatsapp() {
